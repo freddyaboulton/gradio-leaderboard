@@ -1,0 +1,37 @@
+{
+  "name": "gradio_leaderboard",
+  "version": "0.6.12",
+  "description": "Gradio UI packages",
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "private": false,
+  "main_changeset": true,
+  "main": "./Index.svelte",
+  "dependencies": {
+    "@gradio/atoms": "0.6.2",
+    "@gradio/button": "0.2.30",
+    "@gradio/checkboxgroup": "^0.4.8",
+    "@gradio/column": "^0.1.0",
+    "@gradio/group": "^0.1.0",
+    "@gradio/markdown": "0.6.9",
+    "@gradio/row": "^0.1.1",
+    "@gradio/simpletextbox": "^0.1.14",
+    "@gradio/statustracker": "0.4.11",
+    "@gradio/upload": "0.8.4",
+    "@gradio/utils": "0.3.1",
+    "@types/d3-dsv": "^3.0.0",
+    "@types/dompurify": "^3.0.2",
+    "@types/katex": "^0.16.0",
+    "d3-dsv": "^3.0.1",
+    "dequal": "^2.0.2",
+    "dompurify": "^3.0.3",
+    "katex": "^0.16.7",
+    "marked": "^12.0.0"
+  },
+  "exports": {
+    ".": "./Index.svelte",
+    "./example": "./Example.svelte",
+    "./package.json": "./package.json"
+  }
+}
