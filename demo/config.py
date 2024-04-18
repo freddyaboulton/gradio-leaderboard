@@ -34,11 +34,10 @@ ON_LOAD_COLUMNS = [
     "MMLU",
     "TruthfulQA",
     "Winogrande",
-    "GSM8K"]
+    "GSM8K",
+]
 
-FILTER_COLUMNS = ["T",
-                  "Precision",
-                  "Model Size"]
+FILTER_COLUMNS = ["T", "Precision", "Model Size"]
 
 
 NUMERIC_INTERVALS = {

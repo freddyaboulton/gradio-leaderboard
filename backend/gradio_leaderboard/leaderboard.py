@@ -13,9 +13,8 @@ from typing import (
     Union,
 )
 
-import numpy as np
 import semantic_version
-from gradio_client.documentation import document
+from dataclasses import dataclass
 
 from gradio.components import Component
 from gradio.data_classes import GradioModel
@@ -25,6 +24,11 @@ if TYPE_CHECKING:
     import pandas as pd
     from pandas.io.formats.style import Styler
 
+
+@dataclass
+class SearchColumns:
+    primary_column: str
+    secondary_columns: Optional[List[str]]
 
 
 class DataframeData(GradioModel):
@@ -48,7 +52,7 @@ class Leaderboard(Component):
         value: pd.DataFrame | None = None,
         *,
         datatype: str | list[str] = "str",
-        search_column: str | None = None,
+        search_columns: list[str] | SearchColumns | None = None,
         filter_columns: list[str] | None = None,
         hide_columns: list[str] | None = None,
         allow_column_select: bool = True,
@@ -96,7 +100,7 @@ class Leaderboard(Component):
         self.wrap = wrap
         self.headers = [str(s) for s in value.columns]
         self.datatype = datatype
-        self.search_column = search_column or ""
+        self.search_columns = self._get_search_columns(search_columns)
         self.filter_columns = filter_columns or []
         self.hide_columns = hide_columns or []
         self.on_load_columns = on_load_columns or []
@@ -125,17 +129,32 @@ class Leaderboard(Component):
             render=render,
             value=value,
         )
-    
+
+    @staticmethod
+    def _get_search_columns(
+        search_columns: list[str] | SearchColumns | None,
+    ) -> SearchColumns | None:
+        if search_columns is None:
+            return SearchColumns(primary_column=None, secondary_columns=[])
+        if isinstance(search_columns, SearchColumns):
+            return search_columns
+        if isinstance(search_columns, list):
+            return SearchColumns(
+                primary_column=search_columns[0], secondary_columns=search_columns[1:]
+            )
+        raise ValueError(
+            "search_columns must be a list of strings or a SearchColumns object"
+        )
+
     def get_config(self):
-        return {"row_count": self.row_count,
-                "col_count": self.col_count,
-                "headers": self.headers,
-                **super().get_config()
+        return {
+            "row_count": self.row_count,
+            "col_count": self.col_count,
+            "headers": self.headers,
+            **super().get_config(),
         }
 
-    def preprocess(
-        self, payload: DataframeData
-    ) -> pd.DataFrame:
+    def preprocess(self, payload: DataframeData) -> pd.DataFrame:
         """
         Parameters:
             payload: the uploaded spreadsheet data as an object with `headers` and `data` attributes
@@ -152,10 +171,7 @@ class Leaderboard(Component):
         else:
             return pd.DataFrame(payload.data)
 
-    def postprocess(
-        self,
-        value: pd.DataFrame
-    ) -> DataframeData:
+    def postprocess(self, value: pd.DataFrame) -> DataframeData:
         """
         Parameters:
             value: Expects data any of these formats: `pandas.DataFrame`, `pandas.Styler`, `numpy.array`, `polars.DataFrame`, `list[list]`, `list`, or a `dict` with keys 'data' (and optionally 'headers'), or `str` path to a csv, which is rendered as the spreadsheet.
@@ -233,10 +249,7 @@ class Leaderboard(Component):
 
     def process_example(
         self,
-        value: pd.DataFrame
-        | Styler
-        | str
-        | None,
+        value: pd.DataFrame | Styler | str | None,
     ):
         import pandas as pd
 
