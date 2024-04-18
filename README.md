@@ -33,13 +33,17 @@ df["Model Size"] = params_column.apply(lambda x: next(s for s in numeric_interva
 
 
 with gr.Blocks() as demo:
-    gr.Markdown("# 🥇 Leaderboard Component")
+    gr.Markdown("""
+    # 🥇 Leaderboard Component
+    """)
     Leaderboard(value=df,
+                allow_column_select=True,
                 on_load_columns=config.ON_LOAD_COLUMNS,
-                filter_columns=config.FILTER_COLUMNS,
                 search_column="model_name_for_query",
-                hide_columns=["model_name_for_query"],
-                datatype=config.TYPES)
+                hide_columns=["model_name_for_query", "Model Size"],
+                filter_columns=config.FILTER_COLUMNS,
+                datatype=config.TYPES,
+                column_widths=["2%", "33%"])
 
 if __name__ == "__main__":
     demo.launch()
@@ -122,6 +126,19 @@ list[str] | None
 
 </td>
 <td align="left"><code>None</code></td>
+<td align="left">None</td>
+</tr>
+
+<tr>
+<td align="left"><code>allow_column_select</code></td>
+<td align="left" style="width: 25%;">
+
+```python
+bool
+```
+
+</td>
+<td align="left"><code>True</code></td>
 <td align="left">None</td>
 </tr>
 

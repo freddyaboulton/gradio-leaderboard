@@ -10,12 +10,13 @@
 	import Table from "./shared/Table.svelte";
 	import { StatusTracker } from "@gradio/statustracker";
 	import type { LoadingStatus } from "@gradio/statustracker";
-	import type { Headers, Data, Metadata, Datatype } from "./shared/utils";
+	import type { Headers, Data, Metadata, Datatype, SearchColumns } from "./shared/utils";
 	import Row from "@gradio/row";
 	import Column from "@gradio/column";
 	import Checkboxgroup from "./shared/Checkboxgroup.svelte";
 	import Simpletextbox from "./shared/SimpleTextbox.svelte";
 	import Group from "@gradio/group";
+    import SelectSource from "@gradio/atoms/src/SelectSource.svelte";
 	export let headers: Headers = [];
 	export let elem_id = "";
 	export let elem_classes: string[] = [];
@@ -38,7 +39,7 @@
 	export let filter_columns: string[] = [];
 	export let on_load_columns: string[] | [];
 	export let hide_columns: string[] | [];
-	export let search_column: string | null = null;
+	export let search_columns: SearchColumns | null = null;
 	export let allow_column_select: boolean;
 
 	export let line_breaks = true;
@@ -61,7 +62,6 @@
 
 	let _headers: Headers;
 	let original_headers = value.headers.map(s => s);
-	let search_column_data = value.data.map(s => s[value.headers.indexOf(search_column)]);
 	let original_data = value.data.map(s => s);
 	let display_value: string[][] | null;
 	let styling: string[][] | null;
@@ -114,24 +114,63 @@
 		return mask;
 	}
 
-	function filter_column_values(values, filter_values, search_value){
-		let search_value_mask;
+	function search_column_values(values, headers, search_columns: SearchColumns, search_value) {
 		if (!search_value) {
-			search_value_mask = Array(values.length).fill(true);
-		} else {
-			const search_values = search_value.split(";");
-			search_value_mask = search_column_data.map(s => {
-				const row_value = s.toString().toLowerCase()
-				return search_values.some(search_value => row_value.includes(search_value.toLowerCase()));
-			});
+			return new Array(values.length).fill(true);
 		}
+		const query_values = search_value.split(';').map(s => s.trim());
+		const mask = new Array(values.length).fill(false);
+		let triggered_warning = false
+
+		for (let i = 0; i < values.length; i++) {
+			let primary_column_matches = Array();
+			let secondary_column_matches = Array();
+			for (let j = 0; j < query_values.length; j++) {
+				
+				let query_value = query_values[j];
+				let column_index = headers.indexOf(search_columns.primary_column);
+
+				// Check if the query value is column-specific
+				const colon_index = query_value.indexOf(':');
+				if (colon_index !== -1) {
+					const col_name = query_value.substring(0, colon_index);
+					if (!search_columns.secondary_columns.length || !search_columns.secondary_columns.includes(col_name)) {
+						if (! triggered_warning)
+							gradio.dispatch("warning", `Column ${col_name} not found in secondary columns of search_columns`);
+						triggered_warning = true;
+						continue;
+					}
+
+					const col_index = headers.indexOf(col_name);
+					if (col_index !== -1) {
+						column_index = col_index;
+						query_value = query_value.substring(colon_index + 1).trim();
+					}
+				}
+
+				const push_to = colon_index !== -1 ? secondary_column_matches : primary_column_matches;
+
+				if (values[i][column_index].toString().toLowerCase().includes(query_value.toLowerCase())) {
+					push_to.push(true);
+				} else {
+					push_to.push(false);
+				}
+			}
+			mask[i] = primary_column_matches.some(s => s) && secondary_column_matches.every	(s => Boolean(s));
+		}
+  		return mask;
+	}
+
+	function filter_column_values(values, headers, filter_values, search_columns, search_value){
+		const search_value_mask = search_column_values(original_data, headers, search_columns, search_value);
+		
 		const masks = filter_values.map((value, i) => filter_column(filter_columns[i], value)).concat([search_value_mask]);
 		return values.filter((row, i) => masks.every(mask => mask[i]));
 	}
 
 	function update_data(_on_load_columns, filter_values, search_value){
 		values = select_columns(original_data, _on_load_columns);
-		values = filter_column_values(values, filter_values, search_value);
+		values = filter_column_values(values, original_headers, filter_values, search_columns, search_value);
 		if (values.length === 0) {
 			values =  [Array(_on_load_columns.length).fill("")];
 		}
@@ -171,20 +210,6 @@
 		};
 	}
 
-	async function handle_value_change(data: {
-		data: Data;
-		headers: Headers;
-		metadata: Metadata;
-	}): Promise<void> {
-		if (JSON.stringify(data) !== old_value) {
-			value = { ...data };
-			old_value = JSON.stringify(value);
-			handle_change(data);
-		}
-	}
-
-	$: console.log("value", values);
-
 </script>
 
 <Block
@@ -199,7 +224,7 @@
 >
 	<Row>
 		<Column>
-			{#if search_column}
+			{#if search_columns.primary_column}
 				<Row>
 					<Simpletextbox
 						label={"Model name search"}

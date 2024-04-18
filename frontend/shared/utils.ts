@@ -5,3 +5,7 @@ export type Metadata = {
 	[key: string]: string[][] | null;
 } | null;
 export type HeadersWithIDs = { value: string; id: string }[];
+export type SearchColumns = {
+	primary_column: string | null;
+	secondary_columns: string[];
+}

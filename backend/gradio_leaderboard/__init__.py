@@ -1,4 +1,3 @@
+from .leaderboard import Leaderboard, SearchColumns
 
-from .leaderboard import Leaderboard
-
-__all__ = ['Leaderboard']
+__all__ = ["Leaderboard", "SearchColumns"]
