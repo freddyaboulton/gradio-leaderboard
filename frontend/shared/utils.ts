@@ -9,3 +9,11 @@ export type SearchColumns = {
 	primary_column: string | null;
 	secondary_columns: string[];
 }
+export type SelectColumns = {
+	default_selection: string[];
+    cant_deselect: string[];
+    allow: boolean;
+    label: string | null;
+    show_label: boolean;
+    info: string | null;
+}

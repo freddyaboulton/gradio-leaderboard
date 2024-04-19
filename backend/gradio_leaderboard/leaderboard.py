@@ -14,7 +14,7 @@ from typing import (
 )
 
 import semantic_version
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from gradio.components import Component
 from gradio.data_classes import GradioModel
@@ -29,6 +29,18 @@ if TYPE_CHECKING:
 class SearchColumns:
     primary_column: str
     secondary_columns: Optional[List[str]]
+    label: Optional[str] = None
+    placeholder: Optional[str] = None
+
+
+@dataclass
+class SelectColumns:
+    default_selection: Optional[list[str]] = field(default_factory=list)
+    cant_deselect: Optional[list[str]] = field(default_factory=list)
+    allow: bool = True
+    label: Optional[str] = None
+    show_label: bool = True
+    info: Optional[str] = None
 
 
 class DataframeData(GradioModel):
@@ -53,10 +65,9 @@ class Leaderboard(Component):
         *,
         datatype: str | list[str] = "str",
         search_columns: list[str] | SearchColumns | None = None,
+        select_columns: SelectColumns | None = None,
         filter_columns: list[str] | None = None,
         hide_columns: list[str] | None = None,
-        allow_column_select: bool = True,
-        on_load_columns: list[str] | None = None,
         latex_delimiters: list[dict[str, str | bool]] | None = None,
         label: str | None = None,
         show_label: bool | None = None,
@@ -101,12 +112,11 @@ class Leaderboard(Component):
         self.headers = [str(s) for s in value.columns]
         self.datatype = datatype
         self.search_columns = self._get_search_columns(search_columns)
+        self.select_columns_config = select_columns or SelectColumns()
         self.filter_columns = filter_columns or []
         self.hide_columns = hide_columns or []
-        self.on_load_columns = on_load_columns or []
         self.col_count = (len(self.headers), "fixed")
         self.row_count = (value.shape[0], "fixed")
-        self.allow_column_select = allow_column_select
 
         if latex_delimiters is None:
             latex_delimiters = [{"left": "$$", "right": "$$", "display": True}]
@@ -151,6 +161,7 @@ class Leaderboard(Component):
             "row_count": self.row_count,
             "col_count": self.col_count,
             "headers": self.headers,
+            "select_columns_config": self.select_columns_config,
             **super().get_config(),
         }
 

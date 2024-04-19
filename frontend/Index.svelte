@@ -10,13 +10,12 @@
 	import Table from "./shared/Table.svelte";
 	import { StatusTracker } from "@gradio/statustracker";
 	import type { LoadingStatus } from "@gradio/statustracker";
-	import type { Headers, Data, Metadata, Datatype, SearchColumns } from "./shared/utils";
+	import type { Headers, Data, Metadata, Datatype, SearchColumns, SelectColumns } from "./shared/utils";
 	import Row from "@gradio/row";
 	import Column from "@gradio/column";
 	import Checkboxgroup from "./shared/Checkboxgroup.svelte";
 	import Simpletextbox from "./shared/SimpleTextbox.svelte";
 	import Group from "@gradio/group";
-    import SelectSource from "@gradio/atoms/src/SelectSource.svelte";
 	export let headers: Headers = [];
 	export let elem_id = "";
 	export let elem_classes: string[] = [];
@@ -37,10 +36,9 @@
 	export let min_width: number | undefined = undefined;
 	export let root: string;
 	export let filter_columns: string[] = [];
-	export let on_load_columns: string[] | [];
-	export let hide_columns: string[] | [];
+	export let select_columns_config: SelectColumns;
+	export let hide_columns: string[];
 	export let search_columns: SearchColumns | null = null;
-	export let allow_column_select: boolean;
 
 	export let line_breaks = true;
 	export let column_widths: string[] = [];
@@ -49,6 +47,7 @@
 		select: SelectData;
 		input: never;
 		submit: string;
+		warning: string;
 	}>;
 	export let latex_delimiters: {
 		left: string;
@@ -68,7 +67,10 @@
 	let values: (string | number)[][];
 	let filter_values = filter_columns.map(s => get_unique_values(s));
 	let search_value: string | null = null;
-	let _on_load_columns = on_load_columns.length ? on_load_columns: original_headers;
+	console.log("select_columns_config", select_columns_config);
+	if (!select_columns_config.default_selection.length) {
+		select_columns_config.default_selection = original_headers;
+	}
 
 	async function handle_change(data?: {
 		data: Data;
@@ -79,7 +81,7 @@
 
 		_headers = original_headers;
 		values = original_data ? [...original_data] : [];
-		const display_headers = _headers.filter(h => _on_load_columns.includes(h));
+		const display_headers = _headers.filter(h => select_columns_config.default_selection.includes(h));
 		const display_indices = display_headers.map(name => _headers.indexOf(name));
 		_headers = display_headers;
 		values = values.map(row => display_indices.map(i => row[i]));
@@ -176,7 +178,7 @@
 		}
 	}
 
-	$: update_data(_on_load_columns, filter_values, search_value);
+	$: update_data(select_columns_config.default_selection, filter_values, search_value);
 
 
 	function get_unique_values(filter_column) {
@@ -236,13 +238,15 @@
 					/>
 				</Row>
 			{/if}
-			{#if allow_column_select}
+			{#if select_columns_config.allow}
 				<Row>
 					<Checkboxgroup
-						label={"Columns to Show"}
+						label={select_columns_config.label || "Select Columns to Show"}
+						show_label={select_columns_config.show_label}
+						info={select_columns_config.info}
 						{gradio}
-						bind:value={_on_load_columns}
-						choices={headers.filter(s => !hide_columns.includes(s)).map(s => [s, s])}
+						bind:value={select_columns_config.default_selection}
+						choices={headers.filter(s => !(hide_columns.includes(s) || select_columns_config.cant_deselect.includes(s))).map(s => [s, s])}
 						{loading_status}
 					/>
 				</Row>
