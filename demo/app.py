@@ -1,5 +1,5 @@
 import gradio as gr
-from gradio_leaderboard import Leaderboard
+from gradio_leaderboard import Leaderboard, SelectColumns
 import config
 from pathlib import Path
 import pandas as pd
@@ -24,8 +24,11 @@ with gr.Blocks() as demo:
     """)
     Leaderboard(
         value=df,
-        allow_column_select=True,
-        on_load_columns=config.ON_LOAD_COLUMNS,
+        select_columns=SelectColumns(
+            default_selection=config.ON_LOAD_COLUMNS,
+            cant_deselect=["T", "Model"],
+            label="Select Columns to Display:",
+        ),
         search_columns=["model_name_for_query", "Type"],
         hide_columns=["model_name_for_query", "Model Size"],
         filter_columns=config.FILTER_COLUMNS,

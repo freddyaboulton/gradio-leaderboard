@@ -1,3 +1,3 @@
-from .leaderboard import Leaderboard, SearchColumns
+from .leaderboard import Leaderboard, SearchColumns, SelectColumns
 
-__all__ = ["Leaderboard", "SearchColumns"]
+__all__ = ["Leaderboard", "SearchColumns", "SelectColumns"]
