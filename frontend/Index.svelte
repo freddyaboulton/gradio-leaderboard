@@ -106,7 +106,7 @@
  	function filter_column(column_name: string, value: any[]){
 		values = original_data;
 		if (!value.length) {
-			return Array(values.length).fill(true);
+			return Array(values.length).fill(false);
 		}
 		const mask = values.map(row => {
 			return value.some(v => row[original_headers.indexOf(column_name)] === v);
@@ -256,6 +256,7 @@
 						{gradio}
 						{loading_status}
 						choices={get_unique_values(col).map(s => [s, s])}
+						value={get_unique_values(col)}
 						on:input={(e) => filter_values[i] = e.detail}
 					/>
 				{/each}
