@@ -112,7 +112,7 @@ class Leaderboard(Component):
         self.headers = [str(s) for s in value.columns]
         self.datatype = datatype
         self.search_columns = self._get_search_columns(search_columns)
-        self.select_columns_config = select_columns or SelectColumns()
+        self.select_columns_config = self._get_select_columns(select_columns)
         self.filter_columns = filter_columns or []
         self.hide_columns = hide_columns or []
         self.col_count = (len(self.headers), "fixed")
@@ -143,7 +143,7 @@ class Leaderboard(Component):
     @staticmethod
     def _get_search_columns(
         search_columns: list[str] | SearchColumns | None,
-    ) -> SearchColumns | None:
+    ) -> SearchColumns:
         if search_columns is None:
             return SearchColumns(primary_column=None, secondary_columns=[])
         if isinstance(search_columns, SearchColumns):
@@ -154,6 +154,20 @@ class Leaderboard(Component):
             )
         raise ValueError(
             "search_columns must be a list of strings or a SearchColumns object"
+        )
+
+    @staticmethod
+    def _get_select_columns(
+        select_columns: list[str] | SelectColumns | None,
+    ) -> SelectColumns:
+        if select_columns is None:
+            return SelectColumns(allow=False)
+        if isinstance(select_columns, SelectColumns):
+            return select_columns
+        if isinstance(select_columns, list):
+            return SelectColumns(default_selection=select_columns, allow=True)
+        raise ValueError(
+            "select_columns must be a list of strings or a SelectColumns object"
         )
 
     def get_config(self):
