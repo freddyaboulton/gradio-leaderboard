@@ -1,8 +1,32 @@
+---
+tags:
+  - gradio-custom-component
+title: Gradio Leaderboard Component
+emoji: 💻
+colorFrom: pink
+colorTo: pink
+sdk: gradio
+sdk_version: 4.26.0
+app_file: space.py
+pinned: false
+license: mit
+header: mini
+---
 
 # `gradio_leaderboard`
 <img alt="Static Badge" src="https://img.shields.io/badge/version%20-%200.0.1%20-%20orange">  
 
-Super fast , batteries included Leaderboard component ⚡️
+🔋⚡️🥇 Super fast, batteries included Leaderboards with minimal code.
+
+The `gradio_leaderboard` package helps you build fully functional and performant leaderboard demos with `gradio`.
+
+Place the `gradio_leaderboard.Leaderboard` component anywhere in your Gradio application (and optionally pass in some configuration). That's it!
+
+For example usage, please see the [Usage](#usage) section.
+
+For details on configuration, please see the [Configuration](#configuration) section.
+
+For the API reference, see the [Initialization](#initialization) section.
 
 ## Installation
 
@@ -10,45 +34,149 @@ Super fast , batteries included Leaderboard component ⚡️
 pip install gradio_leaderboard
 ```
 
+or add `gradio_leaderboard` to your `requirements.txt`.
+
 ## Usage
 
 ```python
 
 import gradio as gr
 from gradio_leaderboard import Leaderboard
-import config
 from pathlib import Path
 import pandas as pd
 
 abs_path = Path(__file__).parent
 
+# Any pandas-compatible data
 df = pd.read_json(str(abs_path / "leaderboard_data.json"))
-
-# Make a model size column
-numeric_interval = pd.IntervalIndex(
-    sorted([config.NUMERIC_INTERVALS[s] for s in config.NUMERIC_INTERVALS.keys()])
-)
-params_column = pd.to_numeric(df["#Params (B)"], errors="coerce")
-df["Model Size"] = params_column.apply(lambda x: next(s for s in numeric_interval if x in s))
-
 
 with gr.Blocks() as demo:
     gr.Markdown("""
     # 🥇 Leaderboard Component
     """)
-    Leaderboard(value=df,
-                allow_column_select=True,
-                on_load_columns=config.ON_LOAD_COLUMNS,
-                search_column="model_name_for_query",
-                hide_columns=["model_name_for_query", "Model Size"],
-                filter_columns=config.FILTER_COLUMNS,
-                datatype=config.TYPES,
-                column_widths=["2%", "33%"])
+    Leaderboard(
+        value=df,
+        select_columns=["T", "Model", "Average ⬆️", "ARC",
+            "HellaSwag", "MMLU", "TruthfulQA",
+            "Winogrande", "GSM8K"],
+        search_columns=["model_name_for_query", "Type"],
+        hide_columns=["model_name_for_query", "Model Size"],
+        filter_columns=["T", "Precision", "Model Size"],
+    )
 
 if __name__ == "__main__":
     demo.launch()
-
 ```
+
+## Configuration
+
+### Selecting
+
+When column selection is enabled, a checkboxgroup will be displayed in the top left corner of the leaderboard that lets users
+select which columns are displayed.
+
+You can disable/configure the column selection behavior of the `Leaderboard` with the `select_columns` parameter.
+It's value can be:
+
+* `None`: Column selection is not allowed and all of the columns are displayed when the leaderboard loads.
+* `list of column names`: All columns can be selected and the elements of this list correspond to the initial set of selected columns.
+* `SelectColumns instance`: You can import `SelectColumns` from `gradio_leaderboard` for full control of the column selection behavior as well as the checkboxgroup appearance. See an example below.
+
+#### Demo
+
+```python
+import pandas as pd
+import gradio as gr
+from gradio_leaderboard import Leaderboard, SelectColumns
+
+with gr.Blocks() as demo:
+    Leaderboard(
+        value=pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]}),
+        select_columns=SelectColumns(default_selection=["a", "b"],
+                                    cant_deselect="a",
+                                    label="Select The Columns",
+                                    info="Helpful information")
+    )
+
+demo.launch()
+```
+
+![](https://github.com/freddyaboulton/gradio-leaderboard/assets/41651716/ea073681-c01e-4d40-814c-1f3cd56ef292)
+
+
+### Searching
+
+When searching is enabled, a textbox will appear in the top left corner of the leaderboard.
+Users will be able to display rows that match their search query.
+
+Searching follows the following rules:
+
+1. Multiple queries can be separated by a semicolon `;`.
+2. Any subquery is matched against the `primary search column` by default.
+3. To match against a `secondary search column`, the query must be preceded by the column name and a colon (`:`), e.g. `Name: Maria`.
+4. The returned rows are those that match against `ANY` primary search column and `ALL` secondary search columns.
+
+You can configure searching with the `search_columns` parameter. It's value can be:
+* `a list`: In which case the first element is the `primary search column` and the remaining are the `secondary search columns`.
+* A `SearchColumns` instance. This lets you specify the primary and secondary columns explicitly as well as customize the search textbox appearance.
+
+
+#### Demo
+
+```python
+import pandas as pd
+import gradio as gr
+from gradio_leaderboard import Leaderboard, SearchColumns
+
+with gr.Blocks() as demo:
+    Leaderboard(
+        value=pd.DataFrame({"name": ["Freddy", "Maria", "Mark"], "country": ["USA", "Mexico", "USA"]}),
+        search_columns=SearchColumns(primary_column="name", secondary_columns="country",
+                                     placeholder="Search by name or country. To search by country, type 'country:<query>'",
+                                     label="Search"),
+    )
+
+demo.launch()
+```
+
+![](https://github.com/freddyaboulton/gradio-leaderboard/assets/41651716/032a50ef-01e0-48c4-a323-c84d09ccb3db)
+
+
+### Filtering
+
+You can let users filter out rows from the leaderboard with the `filter_columns` parameter.
+This will display a series of form elements that users can use to select/deselect which rows are displayed.
+
+This parameter must be a `list` but it's elements must be:
+
+* `a string`: Corresponding to the column name you'd like to add a filter for
+* `a ColumnFilter`: A special class for full control of the filter's type, e.g. `checkboxgroup`, `slider`, or `dropdown`, as well as it's appearance in the UI.
+
+If the `type` of the `ColumnFilter` is not specified, a heuristic will be used to choose the most appropriate type. If the data in the column is numeric, a slider will be used. If not, a `checkboxgroup` will be used.
+
+
+#### Demo 
+
+```python
+import pandas as pd
+import gradio as gr
+from gradio_leaderboard import Leaderboard, ColumnFilter
+
+with gr.Blocks() as demo:
+    Leaderboard(
+        value=pd.DataFrame({"name": ["Freddy", "Maria", "Mark"], "country": ["USA", "Mexico", "USA"],
+                            "age": [25, 30, 35], "score": [100, 200, 300]}),
+        filter_columns=[
+            "name",
+            ColumnFilter("country", type="dropdown", label="Select Country 🇺🇸🇲🇽"),
+            ColumnFilter("age", type="slider", min=20, max=40, greater_than=True),
+            ColumnFilter("score", type="slider", min=50, max=350, greater_than=True)],
+    )
+
+demo.launch()
+```
+
+![column_filter_gif](https://github.com/freddyaboulton/gradio-leaderboard/assets/41651716/24314762-6719-473e-be07-86aa50ed2bf1)
 
 ## `Leaderboard`
 
@@ -91,16 +219,29 @@ str | list[str]
 </tr>
 
 <tr>
-<td align="left"><code>search_column</code></td>
+<td align="left"><code>search_columns</code></td>
 <td align="left" style="width: 25%;">
 
 ```python
-str | None
+list[str] | SearchColumns
 ```
 
 </td>
 <td align="left"><code>None</code></td>
-<td align="left">None</td>
+<td align="left">See Configuration section of docs for details.</td>
+</tr>
+
+<tr>
+<td align="left"><code>select_columns</code></td>
+<td align="left" style="width: 25%;">
+
+```python
+list[str] | SelectColumns
+```
+
+</td>
+<td align="left"><code>None</code></td>
+<td align="left">See Configuration section of docs for details.</td>
 </tr>
 
 <tr>
@@ -108,12 +249,12 @@ str | None
 <td align="left" style="width: 25%;">
 
 ```python
-list[str] | None
+list[str | ColumnFilter] | None
 ```
 
 </td>
 <td align="left"><code>None</code></td>
-<td align="left">None</td>
+<td align="left">See Configuration section of docs for details.</td>
 </tr>
 
 <tr>
@@ -126,33 +267,7 @@ list[str] | None
 
 </td>
 <td align="left"><code>None</code></td>
-<td align="left">None</td>
-</tr>
-
-<tr>
-<td align="left"><code>allow_column_select</code></td>
-<td align="left" style="width: 25%;">
-
-```python
-bool
-```
-
-</td>
-<td align="left"><code>True</code></td>
-<td align="left">None</td>
-</tr>
-
-<tr>
-<td align="left"><code>on_load_columns</code></td>
-<td align="left" style="width: 25%;">
-
-```python
-list[str] | None
-```
-
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">None</td>
+<td align="left">List of columns to hide by default. They will not be displayed in the table but they can still be used for searching, filtering.</td>
 </tr>
 
 <tr>
@@ -350,34 +465,3 @@ list[str | int] | None
 <td align="left">An optional list representing the width of each column. The elements of the list should be in the format "100px" (ints are also accepted and converted to pixel values) or "10%". If not provided, the column widths will be automatically determined based on the content of the cells. Setting this parameter will cause the browser to try to fit the table within the page width.</td>
 </tr>
 </tbody></table>
-
-
-### Events
-
-| name | description |
-|:-----|:------------|
-| `change` | Triggered when the value of the Leaderboard changes either because of user input (e.g. a user types in a textbox) OR because of a function update (e.g. an image receives a value from the output of an event trigger). See `.input()` for a listener that is only triggered by user input. |
-| `input` | This listener is triggered when the user changes the value of the Leaderboard. |
-| `select` | Event listener for when the user selects or deselects the Leaderboard. Uses event data gradio.SelectData to carry `value` referring to the label of the Leaderboard, and `selected` to refer to state of the Leaderboard. See EventData documentation on how to use this event data |
-
-
-
-### User function
-
-The impact on the users predict function varies depending on whether the component is used as an input or output for an event (or both).
-
-- When used as an Input, the component only impacts the input signature of the user function.
-- When used as an output, the component only impacts the return signature of the user function.
-
-The code snippet below is accurate in cases where the component is used as both an input and an output.
-
-- **As output:** Is passed, passes the uploaded spreadsheet data as a `pandas.DataFrame`, `numpy.array`, `polars.DataFrame`, or native 2D Python `list[list]` depending on `type`.
-- **As input:** Should return, expects data any of these formats: `pandas.DataFrame`, `pandas.Styler`, `numpy.array`, `polars.DataFrame`, `list[list]`, `list`, or a `dict` with keys 'data' (and optionally 'headers'), or `str` path to a csv, which is rendered as the spreadsheet.
-
- ```python
- def predict(
-     value: pd.DataFrame
- ) -> pd.DataFrame:
-     return value
- ```
- 

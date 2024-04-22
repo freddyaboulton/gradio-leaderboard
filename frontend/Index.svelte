@@ -66,7 +66,7 @@
 	let values: (string | number)[][];
 	let filter_values = []
 	let search_value: string | null = null;
-	let default_selection = select_columns_config.default_selection;
+	let default_selection = select_columns_config.default_selection.length ? select_columns_config.default_selection : original_headers;
 
 	async function handle_change(data?: {
 		data: Data;
@@ -107,7 +107,6 @@
 
  	function filter_column(column: ColumnFilter, value: any[] | any){
 		values = original_data;
-		console.log("value", value)
 		if (Array.isArray(value) && !value.length) {
 			return Array(values.length).fill(false);
 		}
@@ -128,7 +127,7 @@
 		if (!search_value) {
 			return new Array(values.length).fill(true);
 		}
-		const query_values = search_value.split(';').map(s => s.trim());
+		const query_values = search_value.split(';').map(s => s.trim()).filter(s => s.length);
 		const mask = new Array(values.length).fill(false);
 		let triggered_warning = false
 
@@ -166,7 +165,13 @@
 					push_to.push(false);
 				}
 			}
-			mask[i] = primary_column_matches.some(s => s) && secondary_column_matches.every	(s => Boolean(s));
+			if (primary_column_matches.length && !secondary_column_matches.length){
+				mask[i] = primary_column_matches.some(s => s);
+			} else if (secondary_column_matches.length && !primary_column_matches.length){
+				mask[i] = secondary_column_matches.every(s => Boolean(s));
+			} else if (primary_column_matches.length && secondary_column_matches.length){
+				mask[i] = primary_column_matches.some(s => s) && secondary_column_matches.every(s => Boolean(s));
+			}
 		}
   		return mask;
 	}
@@ -186,12 +191,6 @@
 	}
 
 	$: update_data(default_selection, filter_values, search_value);
-
-
-	function get_unique_values(filter_column) {
-		const column_index = original_headers.indexOf(filter_column);
-		return [...new Set(original_data.map(row => row[column_index]))];
-	}
 
 	handle_change();
 
@@ -292,6 +291,8 @@
 							value={col.default}
 							show_label={col.show_label}
 							interactive={true}
+							maximum={col.max}
+							minimum={col.min}
 							on:input={(e) => filter_values[i] = e.detail}
 						/>
 					{/if}

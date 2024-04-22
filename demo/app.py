@@ -21,6 +21,7 @@ df["Model Size"] = params_column.apply(
 with gr.Blocks() as demo:
     gr.Markdown("""
     # 🥇 Leaderboard Component
+    Please read the documentation [here](https://huggingface.co/spaces/freddyaboulton/gradio_leaderboard/blob/main/README.md)
     """)
     Leaderboard(
         value=df,

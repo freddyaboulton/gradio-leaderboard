@@ -46,6 +46,8 @@ class ColumnFilter:
     info: Optional[str] = None
     show_label: bool = True
     greater_than: bool = True
+    min: Optional[Union[int, float]] = None
+    max: Optional[Union[int, float]] = None
 
 
 class DataframeData(GradioModel):
@@ -70,8 +72,8 @@ class Leaderboard(Component):
         *,
         datatype: str | list[str] = "str",
         search_columns: list[str] | SearchColumns | None = None,
-        select_columns: SelectColumns | None = None,
-        filter_columns: list[str] | None = None,
+        select_columns: list[str] | SelectColumns | None = None,
+        filter_columns: list[str | ColumnFilter] | None = None,
         hide_columns: list[str] | None = None,
         latex_delimiters: list[dict[str, str | bool]] | None = None,
         label: str | None = None,
@@ -91,11 +93,12 @@ class Leaderboard(Component):
     ):
         """
         Parameters:
-            value: Default value to display in the DataFrame. If a Styler is provided, it will be used to set the displayed value in the DataFrame (e.g. to set precision of numbers) if the `interactive` is False. If a Callable function is provided, the function will be called whenever the app loads to set the initial value of the component.
-            row_count: Limit number of rows for input and decide whether user can create new rows. The first element of the tuple is an `int`, the row count; the second should be 'fixed' or 'dynamic', the new row behaviour. If an `int` is passed the rows default to 'dynamic'
-            col_count: Limit number of columns for input and decide whether user can create new columns. The first element of the tuple is an `int`, the number of columns; the second should be 'fixed' or 'dynamic', the new column behaviour. If an `int` is passed the columns default to 'dynamic'
+            value: Default value to display in the DataFrame. Must be a pandas DataFrame.
             datatype: Datatype of values in sheet. Can be provided per column as a list of strings, or for the entire sheet as a single string. Valid datatypes are "str", "number", "bool", "date", and "markdown".
-            type: Type of value to be returned by component. "pandas" for pandas dataframe, "numpy" for numpy array, "polars" for polars dataframe, or "array" for a Python list of lists.
+            search_columns: See Configuration section of docs for details.
+            select_columns: See Configuration section of docs for details.
+            filter_columns: See Configuration section of docs for details.
+            hide_columns: List of columns to hide by default. They will not be displayed in the table but they can still be used for searching, filtering.
             label: The label for this component. Appears above the component and is also used as the header if there are a table of examples for this component. If None and used in a `gr.Interface`, the label will be the name of the parameter this component is assigned to.
             latex_delimiters: A list of dicts of the form {"left": open delimiter (str), "right": close delimiter (str), "display": whether to display in newline (bool)} that will be used to render LaTeX expressions. If not provided, `latex_delimiters` is set to `[{ "left": "$$", "right": "$$", "display": True }]`, so only expressions enclosed in $$ delimiters will be rendered as LaTeX, and in a new line. Pass in an empty list to disable LaTeX rendering. For more information, see the [KaTeX documentation](https://katex.org/docs/autorender.html). Only applies to columns whose datatype is "markdown".
             label: The label for this component. Appears above the component and is also used as the header if there are a table of examples for this component. If None and used in a `gr.Interface`, the label will be the name of the parameter this component is assigned to.
@@ -163,8 +166,10 @@ class Leaderboard(Component):
 
     @staticmethod
     def _get_column_filter_configs(
-        columns: list[str | ColumnFilter], value: pd.DataFrame
+        columns: list[str | ColumnFilter] | None, value: pd.DataFrame
     ) -> list[ColumnFilter]:
+        if columns is None:
+            return []
         if not isinstance(columns, list):
             raise ValueError(
                 "Columns must be a list of strings or ColumnFilter objects"
