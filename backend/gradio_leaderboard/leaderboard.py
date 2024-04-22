@@ -3,16 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    Literal
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, Literal
 
 from pandas.api.types import is_numeric_dtype, is_object_dtype, is_string_dtype
 import semantic_version
@@ -54,7 +45,7 @@ class ColumnFilter:
     label: Optional[str] = None
     info: Optional[str] = None
     show_label: bool = True
-
+    greater_than: bool = True
 
 
 class DataframeData(GradioModel):
@@ -155,42 +146,42 @@ class Leaderboard(Component):
             render=render,
             value=value,
         )
-    
+
     @staticmethod
-    def _get_best_filter_type(column: str, value: pd.DataFrame) -> Literal["slider", "checkboxgroup", "dropdown"]:
+    def _get_best_filter_type(
+        column: str, value: pd.DataFrame
+    ) -> Literal["slider", "checkboxgroup", "dropdown"]:
         if is_numeric_dtype(value[column]):
             return "slider"
         if is_string_dtype(value[column]) or is_object_dtype(value[column]):
             return "checkboxgroup"
         warnings.warn(
             f"{column}'s type is not numeric or string, defaulting to checkboxgroup filter type.",
-            UserWarning
+            UserWarning,
         )
         return "checkboxgroup"
 
     @staticmethod
     def _get_column_filter_configs(
-        columns: list[str | ColumnFilter],
-        value: pd.DataFrame
+        columns: list[str | ColumnFilter], value: pd.DataFrame
     ) -> list[ColumnFilter]:
         if not isinstance(columns, list):
-            raise ValueError("Columns must be a list of strings or ColumnFilter objects")
+            raise ValueError(
+                "Columns must be a list of strings or ColumnFilter objects"
+            )
         return [
-            Leaderboard._get_column_filter_config(column, value)
-            for column in columns
+            Leaderboard._get_column_filter_config(column, value) for column in columns
         ]
-    
+
     @staticmethod
-    def _get_column_filter_config(
-        column: str | ColumnFilter,
-        value: pd.DataFrame
-    ):
-        best_filter_type = Leaderboard._get_best_filter_type(column, value)
+    def _get_column_filter_config(column: str | ColumnFilter, value: pd.DataFrame):
+        column_name = column if isinstance(column, str) else column.column
+        best_filter_type = Leaderboard._get_best_filter_type(column_name, value)
         if best_filter_type == "slider":
-            default = value[column].max()
+            default = value[column_name].min()
             choices = None
         else:
-            default = value[column].unique().tolist()
+            default = value[column_name].unique().tolist()
             default = [(s, s) for s in default]
             choices = default
         if isinstance(column, ColumnFilter):
@@ -202,11 +193,10 @@ class Leaderboard(Component):
                 column.choices = choices
             return column
         if isinstance(column, str):
-            return ColumnFilter(column=column, type=best_filter_type, default=default,
-                                choices=choices)
-        raise ValueError(
-            f"Columns {column} must be a string or a ColumnFilter object"
-        )
+            return ColumnFilter(
+                column=column, type=best_filter_type, default=default, choices=choices
+            )
+        raise ValueError(f"Columns {column} must be a string or a ColumnFilter object")
 
     @staticmethod
     def _get_search_columns(

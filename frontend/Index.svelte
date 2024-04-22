@@ -14,7 +14,6 @@
 	import Slider from "./shared/Slider.svelte";
 	import { BaseMultiselect } from "@gradio/dropdown";
 	import Group from "@gradio/group";
-    import VirtualTable from "./shared/VirtualTable.svelte";
 
 	export let headers: Headers = [];
 	export let elem_id = "";
@@ -67,6 +66,7 @@
 	let values: (string | number)[][];
 	let filter_values = []
 	let search_value: string | null = null;
+	let default_selection = select_columns_config.default_selection;
 
 	async function handle_change(data?: {
 		data: Data;
@@ -77,7 +77,7 @@
 
 		_headers = original_headers;
 		values = original_data ? [...original_data] : [];
-		const display_headers = _headers.filter(h => select_columns_config.default_selection.includes(h));
+		const display_headers = _headers.filter(h => default_selection.includes(h));
 		const display_indices = display_headers.map(name => _headers.indexOf(name));
 		_headers = display_headers;
 		values = values.map(row => display_indices.map(i => row[i]));
@@ -101,15 +101,20 @@
 		return values;
 	}
 
+	function compare(a, b, greater_than) {
+		return greater_than ? a >= b : a <= b;
+	}
+
  	function filter_column(column: ColumnFilter, value: any[] | any){
 		values = original_data;
-		if (!value.length) {
+		console.log("value", value)
+		if (Array.isArray(value) && !value.length) {
 			return Array(values.length).fill(false);
 		}
 		let filter
 		if (column.type === "slider") {
 			filter = (row) => {
-				return row[original_headers.indexOf(column.column)] <= value
+				return compare(row[original_headers.indexOf(column.column)], value, column.greater_than);
 			}
 		} else {
 			filter = (row) => {
@@ -168,7 +173,6 @@
 
 	function filter_column_values(values, headers, filter_values, search_columns, search_value){
 		const search_value_mask = search_column_values(original_data, headers, search_columns, search_value);
-		
 		const masks = filter_values.map((value, i) => filter_column(filter_columns[i], value)).concat([search_value_mask]);
 		return values.filter((row, i) => masks.every(mask => mask[i]));
 	}
@@ -181,7 +185,7 @@
 		}
 	}
 
-	$: update_data(select_columns_config.default_selection, filter_values, search_value);
+	$: update_data(default_selection, filter_values, search_value);
 
 
 	function get_unique_values(filter_column) {
@@ -214,7 +218,6 @@
 			metadata: null
 		};
 	}
-
 </script>
 
 <Block
@@ -248,7 +251,7 @@
 						show_label={select_columns_config.show_label}
 						info={select_columns_config.info}
 						{gradio}
-						bind:value={select_columns_config.default_selection}
+						bind:value={default_selection}
 						choices={headers.filter(s => !(hide_columns.includes(s) || select_columns_config.cant_deselect.includes(s))).map(s => [s, s])}
 						{loading_status}
 					/>
@@ -270,20 +273,25 @@
 							on:input={(e) => filter_values[i] = e.detail}
 						/>
 					{:else if col.type == "dropdown"}
-						<BaseMultiselect 
+						<Block>
+							<BaseMultiselect 
 							label={col.label || `Filter ${col.column}`}
 							info={col.info}
-							value={col.default}
+							value={col.default.map((s, i) => s[0])}
 							choices={col.choices}
 							show_label={col.show_label}
-							on:input={(e) => filter_values[i] = e.detail}
-						/>
+							i18n={gradio.i18n}
+							container={true}
+							on:change={(e) => filter_values[i] = e.detail}
+							/>
+						</Block>
 					{:else}
 						<Slider
 							label={col.label || `Filter ${col.column}`}
 							info={col.info}
 							value={col.default}
 							show_label={col.show_label}
+							interactive={true}
 							on:input={(e) => filter_values[i] = e.detail}
 						/>
 					{/if}

@@ -32,6 +32,7 @@ export type ColumnFilter = {
 	label: string | null,
 	show_label: boolean,
 	info: string | null,
+	greater_than: boolean,
 }
 export type FilterColumns = ColumnFilter[];
 
