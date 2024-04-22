@@ -3,16 +3,9 @@
 from __future__ import annotations
 
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, Literal
 
+from pandas.api.types import is_numeric_dtype, is_object_dtype, is_string_dtype
 import semantic_version
 from dataclasses import dataclass, field
 
@@ -41,6 +34,18 @@ class SelectColumns:
     label: Optional[str] = None
     show_label: bool = True
     info: Optional[str] = None
+
+
+@dataclass
+class ColumnFilter:
+    column: str
+    type: Literal["slider", "dropdown", "checkboxgroup"] = None
+    default: Optional[Union[int, float, List[Tuple[str, str]]]] = None
+    choices: Optional[Union[int, float, List[Tuple[str, str]]]] = None
+    label: Optional[str] = None
+    info: Optional[str] = None
+    show_label: bool = True
+    greater_than: bool = True
 
 
 class DataframeData(GradioModel):
@@ -108,12 +113,14 @@ class Leaderboard(Component):
             line_breaks: If True (default), will enable Github-flavored Markdown line breaks in chatbot messages. If False, single new lines will be ignored. Only applies for columns of type "markdown."
             column_widths: An optional list representing the width of each column. The elements of the list should be in the format "100px" (ints are also accepted and converted to pixel values) or "10%". If not provided, the column widths will be automatically determined based on the content of the cells. Setting this parameter will cause the browser to try to fit the table within the page width.
         """
+        if value is None:
+            raise ValueError("Leaderboard component must have a value set.")
         self.wrap = wrap
         self.headers = [str(s) for s in value.columns]
         self.datatype = datatype
         self.search_columns = self._get_search_columns(search_columns)
-        self.select_columns_config = self._get_select_columns(select_columns)
-        self.filter_columns = filter_columns or []
+        self.select_columns_config = self._get_select_columns(select_columns, value)
+        self.filter_columns = self._get_column_filter_configs(filter_columns, value)
         self.hide_columns = hide_columns or []
         self.col_count = (len(self.headers), "fixed")
         self.row_count = (value.shape[0], "fixed")
@@ -141,6 +148,57 @@ class Leaderboard(Component):
         )
 
     @staticmethod
+    def _get_best_filter_type(
+        column: str, value: pd.DataFrame
+    ) -> Literal["slider", "checkboxgroup", "dropdown"]:
+        if is_numeric_dtype(value[column]):
+            return "slider"
+        if is_string_dtype(value[column]) or is_object_dtype(value[column]):
+            return "checkboxgroup"
+        warnings.warn(
+            f"{column}'s type is not numeric or string, defaulting to checkboxgroup filter type.",
+            UserWarning,
+        )
+        return "checkboxgroup"
+
+    @staticmethod
+    def _get_column_filter_configs(
+        columns: list[str | ColumnFilter], value: pd.DataFrame
+    ) -> list[ColumnFilter]:
+        if not isinstance(columns, list):
+            raise ValueError(
+                "Columns must be a list of strings or ColumnFilter objects"
+            )
+        return [
+            Leaderboard._get_column_filter_config(column, value) for column in columns
+        ]
+
+    @staticmethod
+    def _get_column_filter_config(column: str | ColumnFilter, value: pd.DataFrame):
+        column_name = column if isinstance(column, str) else column.column
+        best_filter_type = Leaderboard._get_best_filter_type(column_name, value)
+        if best_filter_type == "slider":
+            default = value[column_name].min()
+            choices = None
+        else:
+            default = value[column_name].unique().tolist()
+            default = [(s, s) for s in default]
+            choices = default
+        if isinstance(column, ColumnFilter):
+            if not column.type:
+                column.type = best_filter_type
+            if not column.default:
+                column.default = default
+            if not column.choices:
+                column.choices = choices
+            return column
+        if isinstance(column, str):
+            return ColumnFilter(
+                column=column, type=best_filter_type, default=default, choices=choices
+            )
+        raise ValueError(f"Columns {column} must be a string or a ColumnFilter object")
+
+    @staticmethod
     def _get_search_columns(
         search_columns: list[str] | SearchColumns | None,
     ) -> SearchColumns:
@@ -159,10 +217,13 @@ class Leaderboard(Component):
     @staticmethod
     def _get_select_columns(
         select_columns: list[str] | SelectColumns | None,
+        value: pd.DataFrame,
     ) -> SelectColumns:
         if select_columns is None:
             return SelectColumns(allow=False)
         if isinstance(select_columns, SelectColumns):
+            if not select_columns.default_selection:
+                select_columns.default_selection = value.columns.tolist()
             return select_columns
         if isinstance(select_columns, list):
             return SelectColumns(default_selection=select_columns, allow=True)

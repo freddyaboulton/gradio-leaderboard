@@ -1,8 +1,3 @@
-<script context="module" lang="ts">
-	export { default as BaseDataFrame } from "./shared/Table.svelte";
-	export { default as BaseExample } from "./Example.svelte";
-</script>
-
 <script lang="ts">
 	import { afterUpdate, tick } from "svelte";
 	import type { Gradio, SelectData } from "@gradio/utils";
@@ -10,12 +5,16 @@
 	import Table from "./shared/Table.svelte";
 	import { StatusTracker } from "@gradio/statustracker";
 	import type { LoadingStatus } from "@gradio/statustracker";
-	import type { Headers, Data, Metadata, Datatype, SearchColumns, SelectColumns } from "./shared/utils";
+	import type { Headers, Data, Metadata, Datatype, SearchColumns,
+		SelectColumns, FilterColumns, ColumnFilter } from "./shared/utils";
 	import Row from "@gradio/row";
 	import Column from "@gradio/column";
 	import Checkboxgroup from "./shared/Checkboxgroup.svelte";
 	import Simpletextbox from "./shared/SimpleTextbox.svelte";
+	import Slider from "./shared/Slider.svelte";
+	import { BaseMultiselect } from "@gradio/dropdown";
 	import Group from "@gradio/group";
+
 	export let headers: Headers = [];
 	export let elem_id = "";
 	export let elem_classes: string[] = [];
@@ -35,7 +34,7 @@
 	export let scale: number | null = null;
 	export let min_width: number | undefined = undefined;
 	export let root: string;
-	export let filter_columns: string[] = [];
+	export let filter_columns: FilterColumns = [];
 	export let select_columns_config: SelectColumns;
 	export let hide_columns: string[];
 	export let search_columns: SearchColumns | null = null;
@@ -65,12 +64,9 @@
 	let display_value: string[][] | null;
 	let styling: string[][] | null;
 	let values: (string | number)[][];
-	let filter_values = filter_columns.map(s => get_unique_values(s));
+	let filter_values = []
 	let search_value: string | null = null;
-	console.log("select_columns_config", select_columns_config);
-	if (!select_columns_config.default_selection.length) {
-		select_columns_config.default_selection = original_headers;
-	}
+	let default_selection = select_columns_config.default_selection;
 
 	async function handle_change(data?: {
 		data: Data;
@@ -81,7 +77,7 @@
 
 		_headers = original_headers;
 		values = original_data ? [...original_data] : [];
-		const display_headers = _headers.filter(h => select_columns_config.default_selection.includes(h));
+		const display_headers = _headers.filter(h => default_selection.includes(h));
 		const display_indices = display_headers.map(name => _headers.indexOf(name));
 		_headers = display_headers;
 		values = values.map(row => display_indices.map(i => row[i]));
@@ -105,15 +101,27 @@
 		return values;
 	}
 
- 	function filter_column(column_name: string, value: any[]){
+	function compare(a, b, greater_than) {
+		return greater_than ? a >= b : a <= b;
+	}
+
+ 	function filter_column(column: ColumnFilter, value: any[] | any){
 		values = original_data;
-		if (!value.length) {
+		console.log("value", value)
+		if (Array.isArray(value) && !value.length) {
 			return Array(values.length).fill(false);
 		}
-		const mask = values.map(row => {
-			return value.some(v => row[original_headers.indexOf(column_name)] === v);
-		});
-		return mask;
+		let filter
+		if (column.type === "slider") {
+			filter = (row) => {
+				return compare(row[original_headers.indexOf(column.column)], value, column.greater_than);
+			}
+		} else {
+			filter = (row) => {
+				return value.some(v => row[original_headers.indexOf(column.column)] === v);
+			}
+		}
+		return values.map(filter);
 	}
 
 	function search_column_values(values, headers, search_columns: SearchColumns, search_value) {
@@ -165,7 +173,6 @@
 
 	function filter_column_values(values, headers, filter_values, search_columns, search_value){
 		const search_value_mask = search_column_values(original_data, headers, search_columns, search_value);
-		
 		const masks = filter_values.map((value, i) => filter_column(filter_columns[i], value)).concat([search_value_mask]);
 		return values.filter((row, i) => masks.every(mask => mask[i]));
 	}
@@ -178,7 +185,7 @@
 		}
 	}
 
-	$: update_data(select_columns_config.default_selection, filter_values, search_value);
+	$: update_data(default_selection, filter_values, search_value);
 
 
 	function get_unique_values(filter_column) {
@@ -211,7 +218,6 @@
 			metadata: null
 		};
 	}
-
 </script>
 
 <Block
@@ -245,7 +251,7 @@
 						show_label={select_columns_config.show_label}
 						info={select_columns_config.info}
 						{gradio}
-						bind:value={select_columns_config.default_selection}
+						bind:value={default_selection}
 						choices={headers.filter(s => !(hide_columns.includes(s) || select_columns_config.cant_deselect.includes(s))).map(s => [s, s])}
 						{loading_status}
 					/>
@@ -255,14 +261,40 @@
 		<Column>
 			<Group>
 				{#each filter_columns as col, i}
-					<Checkboxgroup
-						label={`Filter ${col}`}
-						{gradio}
-						{loading_status}
-						choices={get_unique_values(col).map(s => [s, s])}
-						value={get_unique_values(col)}
-						on:input={(e) => filter_values[i] = e.detail}
-					/>
+					{#if col.type === "checkboxgroup"}
+						<Checkboxgroup
+							label={col.label || `Filter ${col.column}`}
+							{gradio}
+							{loading_status}
+							choices={col.choices}
+							value={col.default.map((s, i) => s[0])}
+							info={col.info}
+							show_label={col.show_label}
+							on:input={(e) => filter_values[i] = e.detail}
+						/>
+					{:else if col.type == "dropdown"}
+						<Block>
+							<BaseMultiselect 
+							label={col.label || `Filter ${col.column}`}
+							info={col.info}
+							value={col.default.map((s, i) => s[0])}
+							choices={col.choices}
+							show_label={col.show_label}
+							i18n={gradio.i18n}
+							container={true}
+							on:change={(e) => filter_values[i] = e.detail}
+							/>
+						</Block>
+					{:else}
+						<Slider
+							label={col.label || `Filter ${col.column}`}
+							info={col.info}
+							value={col.default}
+							show_label={col.show_label}
+							interactive={true}
+							on:input={(e) => filter_values[i] = e.detail}
+						/>
+					{/if}
 				{/each}
 			</Group>
 		</Column>
