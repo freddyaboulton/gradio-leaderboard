@@ -17,13 +17,8 @@ export type SelectColumns = {
     show_label: boolean;
     info: string | null;
 }
-/*
-    column: str
-    type: Literal["slider", "dropdown", "checkboxgroup"] = None
-    default: Optional[Union[int, float, List[Tuple[str, str]]]] = None
-    label: Optional[str] = None
-    info: Optional[str] = None
-*/
+
+
 export type ColumnFilter = {
 	column: string,
 	type: "slider" | "dropdown" | "checkboxgroup",
@@ -33,6 +28,8 @@ export type ColumnFilter = {
 	show_label: boolean,
 	info: string | null,
 	greater_than: boolean,
+	min: number | null,
+	max: number | null,
 }
 export type FilterColumns = ColumnFilter[];
 
