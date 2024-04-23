@@ -140,7 +140,7 @@ with gr.Blocks() as demo:
 demo.launch()
 ```
 
-![](https://github.com/freddyaboulton/gradio-leaderboard/assets/41651716/032a50ef-01e0-48c4-a323-c84d09ccb3db)
+![colum_search_gif](https://github.com/freddyaboulton/gradio-leaderboard/assets/41651716/4725f812-ffca-4ef9-951f-77574accd159)
 
 
 ### Filtering
