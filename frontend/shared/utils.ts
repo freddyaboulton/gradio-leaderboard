@@ -8,6 +8,8 @@ export type HeadersWithIDs = { value: string; id: string }[];
 export type SearchColumns = {
 	primary_column: string | null;
 	secondary_columns: string[];
+	label: string | null;
+	placeholder: string | null;
 }
 export type SelectColumns = {
 	default_selection: string[];
