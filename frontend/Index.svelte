@@ -234,9 +234,9 @@
 			{#if search_columns.primary_column}
 				<Row>
 					<Simpletextbox
-						label={"Model name search"}
+						label={search_columns.label ?? "Search"}
 						show_label={true}
-						placeholder={"Search for a model by name. Separate multiple queries with ';'."}
+						placeholder={search_columns.placeholder ?? "Separate multiple queries with ';'."}
 						interactive={true}
 						{gradio}
 						on:submit={(e) => search_value = e.detail}

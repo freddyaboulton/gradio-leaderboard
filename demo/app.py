@@ -21,21 +21,24 @@ df["Model Size"] = params_column.apply(
 with gr.Blocks() as demo:
     gr.Markdown("""
     # 🥇 Leaderboard Component
-    Please read the documentation [here](https://huggingface.co/spaces/freddyaboulton/gradio_leaderboard/blob/main/README.md)
     """)
-    Leaderboard(
-        value=df,
-        select_columns=SelectColumns(
-            default_selection=config.ON_LOAD_COLUMNS,
-            cant_deselect=["T", "Model"],
-            label="Select Columns to Display:",
-        ),
-        search_columns=["model_name_for_query", "Type"],
-        hide_columns=["model_name_for_query", "Model Size"],
-        filter_columns=config.FILTER_COLUMNS,
-        datatype=config.TYPES,
-        column_widths=["2%", "33%"],
-    )
+    with gr.Tabs():
+        with gr.Tab("Demo"):
+            Leaderboard(
+                value=df,
+                select_columns=SelectColumns(
+                    default_selection=config.ON_LOAD_COLUMNS,
+                    cant_deselect=["T", "Model"],
+                    label="Select Columns to Display:",
+                ),
+                search_columns=["model_name_for_query", "Type"],
+                hide_columns=["model_name_for_query", "Model Size"],
+                filter_columns=config.FILTER_COLUMNS,
+                datatype=config.TYPES,
+                column_widths=["2%", "33%"],
+            )
+        with gr.Tab("Docs"):
+            gr.Markdown((Path(__file__).parent / "docs.md").read_text())
 
 if __name__ == "__main__":
     demo.launch()

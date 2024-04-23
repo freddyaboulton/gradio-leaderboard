@@ -1,17 +1,3 @@
----
-tags:
-  - gradio-custom-component
-title: Gradio Leaderboard Component
-emoji: 💻
-colorFrom: pink
-colorTo: pink
-sdk: gradio
-sdk_version: 4.26.0
-app_file: space.py
-pinned: false
-license: mit
-header: mini
----
 
 # gradio_leaderboard
 
