@@ -353,5 +353,8 @@ class Leaderboard(Component):
     def example_payload(self) -> Any:
         return {"headers": ["a", "b"], "data": [["foo", "bar"]]}
 
+    def example_inputs(self) -> Any:
+        return self.example_value()
+
     def example_value(self) -> Any:
         return {"headers": ["a", "b"], "data": [["foo", "bar"]]}
