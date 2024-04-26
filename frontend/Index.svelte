@@ -5,15 +5,15 @@
 	import Table from "./shared/Table.svelte";
 	import { StatusTracker } from "@gradio/statustracker";
 	import type { LoadingStatus } from "@gradio/statustracker";
+	import Form from "@gradio/form";
 	import type { Headers, Data, Metadata, Datatype, SearchColumns,
 		SelectColumns, FilterColumns, ColumnFilter } from "./shared/utils";
 	import Row from "@gradio/row";
 	import Column from "@gradio/column";
 	import Checkboxgroup from "./shared/Checkboxgroup.svelte";
 	import Simpletextbox from "./shared/SimpleTextbox.svelte";
-	import Slider from "./shared/Slider.svelte";
 	import { BaseMultiselect } from "@gradio/dropdown";
-	import Group from "@gradio/group";
+    import RangeSlider from "./shared/RangeSlider.svelte";
 
 	export let headers: Headers = [];
 	export let elem_id = "";
@@ -101,8 +101,8 @@
 		return values;
 	}
 
-	function compare(a, b, greater_than) {
-		return greater_than ? a >= b : a <= b;
+	function compare(val, min, max) {
+		return val >= min && val <= max;
 	}
 
  	function filter_column(column: ColumnFilter, value: any[] | any){
@@ -112,8 +112,9 @@
 		}
 		let filter
 		if (column.type === "slider") {
+			const [min, max] = value;
 			filter = (row) => {
-				return compare(row[original_headers.indexOf(column.column)], value, column.greater_than);
+				return compare(row[original_headers.indexOf(column.column)], min, max);
 			}
 		} else {
 			filter = (row) => {
@@ -258,7 +259,7 @@
 			{/if}
 		</Column>
 		<Column>
-			<Group>
+			<Form>
 				{#each filter_columns as col, i}
 					{#if col.type === "checkboxgroup"}
 						<Checkboxgroup
@@ -285,19 +286,18 @@
 							/>
 						</Block>
 					{:else}
-						<Slider
+						<RangeSlider
 							label={col.label || `Filter ${col.column}`}
-							info={col.info}
-							value={col.default}
 							show_label={col.show_label}
-							interactive={true}
-							maximum={col.max}
-							minimum={col.min}
-							on:input={(e) => filter_values[i] = e.detail}
+							min={col.min}
+							max={col.max}
+							selected_min={col.default[0]}
+							selected_max={col.default[1]}
+							on:change={(e) => filter_values[i] = e.detail}
 						/>
 					{/if}
 				{/each}
-			</Group>
+			</Form>
 		</Column>
 	</Row>
 	<Row>

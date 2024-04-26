@@ -45,7 +45,6 @@ class ColumnFilter:
     label: Optional[str] = None
     info: Optional[str] = None
     show_label: bool = True
-    greater_than: bool = True
     min: Optional[Union[int, float]] = None
     max: Optional[Union[int, float]] = None
 
@@ -182,8 +181,12 @@ class Leaderboard(Component):
     def _get_column_filter_config(column: str | ColumnFilter, value: pd.DataFrame):
         column_name = column if isinstance(column, str) else column.column
         best_filter_type = Leaderboard._get_best_filter_type(column_name, value)
+        min_val = None
+        max_val = None
         if best_filter_type == "slider":
-            default = value[column_name].min()
+            default = [value[column_name].quantile(0.25),  value[column_name].quantile(0.70)]
+            min_val = value[column_name].min()
+            max_val = value[column_name].max()
             choices = None
         else:
             default = value[column_name].unique().tolist()
@@ -196,10 +199,14 @@ class Leaderboard(Component):
                 column.default = default
             if not column.choices:
                 column.choices = choices
+            if min_val is not None and max_val is not None:
+                column.min = min_val
+                column.max = max_val
             return column
         if isinstance(column, str):
             return ColumnFilter(
-                column=column, type=best_filter_type, default=default, choices=choices
+                column=column, type=best_filter_type, default=default, choices=choices,
+                min=min_val, max=max_val
             )
         raise ValueError(f"Columns {column} must be a string or a ColumnFilter object")
 

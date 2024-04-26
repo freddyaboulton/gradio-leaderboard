@@ -17,6 +17,13 @@ df["Model Size"] = params_column.apply(
     lambda x: next(s for s in numeric_interval if x in s)
 )
 
+df = pd.DataFrame({"A" : [14, 4, 5, 4, 1], 
+				"B" : [5, 2, 54, 3, 2], 
+				"C" : [20, 20, 7, 3, 8], 
+				"D" : [14, 3, 6, 2, 6], 
+				"E" : [23, 45, 64, 32, 23]}) 
+
+t = df.style.highlight_max(color = 'lightgreen', axis = 0)
 
 with gr.Blocks() as demo:
     gr.Markdown("""
@@ -24,17 +31,11 @@ with gr.Blocks() as demo:
     Please read the documentation [here](https://huggingface.co/spaces/freddyaboulton/gradio_leaderboard/blob/main/README.md)
     """)
     Leaderboard(
-        value=df,
+        value=t,
         select_columns=SelectColumns(
-            default_selection=config.ON_LOAD_COLUMNS,
-            cant_deselect=["T", "Model"],
-            label="Select Columns to Display:",
+            default_selection=["A", "B", "C"],
         ),
-        search_columns=["model_name_for_query", "Type"],
-        hide_columns=["model_name_for_query", "Model Size"],
-        filter_columns=config.FILTER_COLUMNS,
-        datatype=config.TYPES,
-        column_widths=["2%", "33%"],
+        filter_columns=["D", "E"],
     )
 
 if __name__ == "__main__":
