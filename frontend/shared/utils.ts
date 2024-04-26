@@ -23,8 +23,8 @@ export type SelectColumns = {
 
 export type ColumnFilter = {
 	column: string,
-	type: "slider" | "dropdown" | "checkboxgroup",
-	default: number | string | [string, string][],
+	type: "slider" | "dropdown" | "checkboxgroup" | "checkbox",
+	default: boolean | number | string | [string, string][],
 	choices: [string, string][],
 	label: string | null,
 	show_label: boolean,
