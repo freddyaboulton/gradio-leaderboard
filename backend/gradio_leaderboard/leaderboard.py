@@ -44,7 +44,7 @@ class SelectColumns:
 @dataclass
 class ColumnFilter:
     column: str
-    type: Literal["slider", "dropdown", "checkboxgroup", "checkbox"] = None
+    type: Literal["slider", "dropdown", "checkboxgroup", "boolean"] = None
     default: Optional[Union[int, float, List[Tuple[str, str]]]] = None
     choices: Optional[Union[int, float, List[Tuple[str, str]]]] = None
     label: Optional[str] = None
@@ -209,6 +209,8 @@ class Leaderboard(Component):
             default = [(s, s) for s in default]
             choices = default
         if isinstance(column, ColumnFilter):
+            if column.type == "boolean":
+                column.type = "checkbox"
             if not column.type:
                 column.type = best_filter_type
             if column.default is None:
