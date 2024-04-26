@@ -5,7 +5,12 @@ from __future__ import annotations
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, Literal
 
-from pandas.api.types import is_numeric_dtype, is_object_dtype, is_string_dtype
+from pandas.api.types import (
+    is_numeric_dtype,
+    is_object_dtype,
+    is_string_dtype,
+    is_bool_dtype,
+)
 import semantic_version
 from dataclasses import dataclass, field
 
@@ -39,7 +44,7 @@ class SelectColumns:
 @dataclass
 class ColumnFilter:
     column: str
-    type: Literal["slider", "dropdown", "checkboxgroup"] = None
+    type: Literal["slider", "dropdown", "checkboxgroup", "checkbox"] = None
     default: Optional[Union[int, float, List[Tuple[str, str]]]] = None
     choices: Optional[Union[int, float, List[Tuple[str, str]]]] = None
     label: Optional[str] = None
@@ -73,6 +78,7 @@ class Leaderboard(Component):
         search_columns: list[str] | SearchColumns | None = None,
         select_columns: list[str] | SelectColumns | None = None,
         filter_columns: list[str | ColumnFilter] | None = None,
+        bool_checkboxgroup_label: str | None = None,
         hide_columns: list[str] | None = None,
         latex_delimiters: list[dict[str, str | bool]] | None = None,
         label: str | None = None,
@@ -97,6 +103,7 @@ class Leaderboard(Component):
             search_columns: See Configuration section of docs for details.
             select_columns: See Configuration section of docs for details.
             filter_columns: See Configuration section of docs for details.
+            bool_checkboxgroup_label: Label for the checkboxgroup filter for boolean columns.
             hide_columns: List of columns to hide by default. They will not be displayed in the table but they can still be used for searching, filtering.
             label: The label for this component. Appears above the component and is also used as the header if there are a table of examples for this component. If None and used in a `gr.Interface`, the label will be the name of the parameter this component is assigned to.
             latex_delimiters: A list of dicts of the form {"left": open delimiter (str), "right": close delimiter (str), "display": whether to display in newline (bool)} that will be used to render LaTeX expressions. If not provided, `latex_delimiters` is set to `[{ "left": "$$", "right": "$$", "display": True }]`, so only expressions enclosed in $$ delimiters will be rendered as LaTeX, and in a new line. Pass in an empty list to disable LaTeX rendering. For more information, see the [KaTeX documentation](https://katex.org/docs/autorender.html). Only applies to columns whose datatype is "markdown".
@@ -121,6 +128,7 @@ class Leaderboard(Component):
         self.headers = [str(s) for s in value.columns]
         self.datatype = datatype
         self.search_columns = self._get_search_columns(search_columns)
+        self.bool_checkboxgroup_label = bool_checkboxgroup_label
         self.select_columns_config = self._get_select_columns(select_columns, value)
         self.filter_columns = self._get_column_filter_configs(filter_columns, value)
         self.hide_columns = hide_columns or []
@@ -152,7 +160,9 @@ class Leaderboard(Component):
     @staticmethod
     def _get_best_filter_type(
         column: str, value: pd.DataFrame
-    ) -> Literal["slider", "checkboxgroup", "dropdown"]:
+    ) -> Literal["slider", "checkboxgroup", "dropdown", "checkbox"]:
+        if is_bool_dtype(value[column]):
+            return "checkbox"
         if is_numeric_dtype(value[column]):
             return "slider"
         if is_string_dtype(value[column]) or is_object_dtype(value[column]):
@@ -184,9 +194,15 @@ class Leaderboard(Component):
         min_val = None
         max_val = None
         if best_filter_type == "slider":
-            default = [value[column_name].quantile(0.25),  value[column_name].quantile(0.70)]
+            default = [
+                value[column_name].quantile(0.25),
+                value[column_name].quantile(0.70),
+            ]
             min_val = value[column_name].min()
             max_val = value[column_name].max()
+            choices = None
+        elif best_filter_type == "checkbox":
+            default = False
             choices = None
         else:
             default = value[column_name].unique().tolist()
@@ -195,7 +211,7 @@ class Leaderboard(Component):
         if isinstance(column, ColumnFilter):
             if not column.type:
                 column.type = best_filter_type
-            if not column.default:
+            if column.default is None:
                 column.default = default
             if not column.choices:
                 column.choices = choices
@@ -205,8 +221,12 @@ class Leaderboard(Component):
             return column
         if isinstance(column, str):
             return ColumnFilter(
-                column=column, type=best_filter_type, default=default, choices=choices,
-                min=min_val, max=max_val
+                column=column,
+                type=best_filter_type,
+                default=default,
+                choices=choices,
+                min=min_val,
+                max=max_val,
             )
         raise ValueError(f"Columns {column} must be a string or a ColumnFilter object")
 

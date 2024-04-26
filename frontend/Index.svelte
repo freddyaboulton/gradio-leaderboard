@@ -24,6 +24,7 @@
 		headers: ["1", "2", "3"],
 		metadata: null
 	};
+	export let bool_checkboxgroup_label: string | null = null;
 	let old_value = "";
 	export let value_is_output = false;
 	export let col_count: [number, "fixed" | "dynamic"];
@@ -64,7 +65,7 @@
 	let display_value: string[][] | null;
 	let styling: string[][] | null;
 	let values: (string | number)[][];
-	let filter_values = []
+	let filter_values: [string,  number][] = [];
 	let search_value: string | null = null;
 	let default_selection = select_columns_config.default_selection.length ? select_columns_config.default_selection : original_headers;
 
@@ -106,6 +107,9 @@
 	}
 
  	function filter_column(column: ColumnFilter, value: any[] | any){
+		if (column.type === "checkbox" && !value) {
+			return Array(original_data.length).fill(true);
+		}
 		values = original_data;
 		if (Array.isArray(value) && !value.length) {
 			return Array(values.length).fill(false);
@@ -115,6 +119,10 @@
 			const [min, max] = value;
 			filter = (row) => {
 				return compare(row[original_headers.indexOf(column.column)], min, max);
+			}
+		} else if (column.type == "checkbox") {
+			filter = (row) => {
+				return row[original_headers.indexOf(column.column)] === value;
 			}
 		} else {
 			filter = (row) => {
@@ -177,9 +185,14 @@
   		return mask;
 	}
 
-	function filter_column_values(values, headers, filter_values, search_columns, search_value){
+	function get_column_filter(column: string){
+		return filter_columns.find(f => f.column === column);
+	}
+
+	function filter_column_values(values, headers, filter_values: [string, any][], search_columns, search_value){
+		console.log("filter_values", filter_values);
 		const search_value_mask = search_column_values(original_data, headers, search_columns, search_value);
-		const masks = filter_values.map((value, i) => filter_column(filter_columns[i], value)).concat([search_value_mask]);
+		const masks = filter_values.map((tup) => filter_column(get_column_filter(tup[0]), tup[1])).concat([search_value_mask]);
 		return values.filter((row, i) => masks.every(mask => mask[i]));
 	}
 
@@ -218,115 +231,127 @@
 			metadata: null
 		};
 	}
+
+	const non_checkbox_filter_columns = filter_columns.filter(col => col.type !== "checkbox");
+	const checkbox_filter_columns = filter_columns.filter(col => col.type === "checkbox");
+	checkbox_filter_columns.forEach((col, i) => {
+		if (col.default) {
+			filter_values[non_checkbox_filter_columns.length + i] = [col.column, col.default];
+		}
+	});
+
 </script>
 
-<Block
-	{visible}
-	padding={false}
-	{elem_id}
-	{elem_classes}
-	container={false}
-	{scale}
-	{min_width}
-	allow_overflow={false}
->
-	<Row>
-		<Column>
-			{#if search_columns.primary_column}
-				<Row>
-					<Simpletextbox
-						label={search_columns.label ?? "Search"}
-						show_label={true}
-						placeholder={search_columns.placeholder ?? "Separate multiple queries with ';'."}
-						interactive={true}
-						{gradio}
-						on:submit={(e) => search_value = e.detail}
-					/>
-				</Row>
-			{/if}
-			{#if select_columns_config.allow}
-				<Row>
+<Row>
+	<Column>
+		{#if search_columns.primary_column}
+			<Row>
+				<Simpletextbox
+					label={search_columns.label ?? "Search"}
+					show_label={true}
+					placeholder={search_columns.placeholder ?? "Separate multiple queries with ';'."}
+					interactive={true}
+					{gradio}
+					on:submit={(e) => search_value = e.detail}
+				/>
+			</Row>
+		{/if}
+		{#if select_columns_config.allow}
+			<Row>
+				<Checkboxgroup
+					label={select_columns_config.label || "Select Columns to Show"}
+					show_label={select_columns_config.show_label}
+					info={select_columns_config.info}
+					{gradio}
+					bind:value={default_selection}
+					choices={headers.filter(s => !(hide_columns.includes(s) || select_columns_config.cant_deselect.includes(s))).map(s => [s, s])}
+					{loading_status}
+				/>
+			</Row>
+		{/if}
+	</Column>
+	<Column>
+		<Form>
+			{#each non_checkbox_filter_columns as col, i}
+				{#if col.type === "checkboxgroup"}
 					<Checkboxgroup
-						label={select_columns_config.label || "Select Columns to Show"}
-						show_label={select_columns_config.show_label}
-						info={select_columns_config.info}
+						label={col.label || `Filter ${col.column}`}
 						{gradio}
-						bind:value={default_selection}
-						choices={headers.filter(s => !(hide_columns.includes(s) || select_columns_config.cant_deselect.includes(s))).map(s => [s, s])}
 						{loading_status}
+						choices={col.choices}
+						value={col.default.map((s, i) => s[0])}
+						info={col.info}
+						show_label={col.show_label}
+						on:input={(e) => filter_values[i] = [col.column, e.detail]}
 					/>
-				</Row>
-			{/if}
-		</Column>
-		<Column>
-			<Form>
-				{#each filter_columns as col, i}
-					{#if col.type === "checkboxgroup"}
-						<Checkboxgroup
-							label={col.label || `Filter ${col.column}`}
-							{gradio}
-							{loading_status}
-							choices={col.choices}
-							value={col.default.map((s, i) => s[0])}
-							info={col.info}
-							show_label={col.show_label}
-							on:input={(e) => filter_values[i] = e.detail}
+				{:else if col.type == "dropdown"}
+					<Block>
+						<BaseMultiselect 
+						label={col.label || `Filter ${col.column}`}
+						info={col.info}
+						value={col.default.map((s, i) => s[0])}
+						choices={col.choices}
+						show_label={col.show_label}
+						i18n={gradio.i18n}
+						container={true}
+						on:change={(e) => filter_values[i] = [col.column, e.detail]}
 						/>
-					{:else if col.type == "dropdown"}
-						<Block>
-							<BaseMultiselect 
-							label={col.label || `Filter ${col.column}`}
-							info={col.info}
-							value={col.default.map((s, i) => s[0])}
-							choices={col.choices}
-							show_label={col.show_label}
-							i18n={gradio.i18n}
-							container={true}
-							on:change={(e) => filter_values[i] = e.detail}
-							/>
-						</Block>
-					{:else}
-						<RangeSlider
-							label={col.label || `Filter ${col.column}`}
-							show_label={col.show_label}
-							min={col.min}
-							max={col.max}
-							selected_min={col.default[0]}
-							selected_max={col.default[1]}
-							on:change={(e) => filter_values[i] = e.detail}
-						/>
-					{/if}
-				{/each}
-			</Form>
-		</Column>
-	</Row>
-	<Row>
-		<StatusTracker
-		autoscroll={gradio.autoscroll}
+					</Block>
+				{:else}
+					<RangeSlider
+						label={col.label || `Filter ${col.column}`}
+						show_label={col.show_label}
+						min={col.min}
+						max={col.max}
+						selected_min={col.default[0]}
+						selected_max={col.default[1]}
+						on:change={(e) => filter_values[i] = [col.column, e.detail]}
+					/>
+				{/if}
+			{/each}
+			<Checkboxgroup
+				label={bool_checkboxgroup_label || "Show Rows with the Following Values"}
+				show_label={true}
+				{gradio}
+				{loading_status}
+				choices={checkbox_filter_columns.map(col => [col.label ?? col.column, col.column])}
+				value={checkbox_filter_columns.map(col => col.default ? col.column : null).filter(s => s)}
+				on:input={(e) => {
+					checkbox_filter_columns.forEach((col, i) => {
+						filter_values[non_checkbox_filter_columns.length + i] = [col.column, e.detail.includes(col.column)]
+					});
+				}}
+			/>
+		</Form>
+	</Column>
+</Row>
+<!-- insert empty space below -->
+<Block height="20px" container={false}/>
+<Row>
+	<StatusTracker
+	autoscroll={gradio.autoscroll}
+	i18n={gradio.i18n}
+	{...loading_status}
+/>
+	<Table
+		{root}
+		{label}
+		{show_label}
+		row_count={[values.length, "fixed"]}
+		col_count={[_headers.length, "fixed"]}
+		{values}
+		{display_value}
+		{styling}
+		headers={_headers}
+		on:select={(e) => gradio.dispatch("select", e.detail)}
+		{wrap}
+		{datatype}
+		{latex_delimiters}
+		editable={interactive}
+		{height}
 		i18n={gradio.i18n}
-		{...loading_status}
+		{line_breaks}
+		{column_widths}
+		{hide_columns}
 	/>
-		<Table
-			{root}
-			{label}
-			{show_label}
-			row_count={[values.length, "fixed"]}
-			col_count={[_headers.length, "fixed"]}
-			{values}
-			{display_value}
-			{styling}
-			headers={_headers}
-			on:select={(e) => gradio.dispatch("select", e.detail)}
-			{wrap}
-			{datatype}
-			{latex_delimiters}
-			editable={interactive}
-			{height}
-			i18n={gradio.i18n}
-			{line_breaks}
-			{column_widths}
-			{hide_columns}
-		/>
-	</Row>
-
-</Block>
+</Row>
