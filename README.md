@@ -151,10 +151,9 @@ This will display a series of form elements that users can use to select/deselec
 This parameter must be a `list` but it's elements must be:
 
 * `a string`: Corresponding to the column name you'd like to add a filter for
-* `a ColumnFilter`: A special class for full control of the filter's type, e.g. `checkboxgroup`, `slider`, or `dropdown`, as well as it's appearance in the UI.
+* `a ColumnFilter`: A special class for full control of the filter's type, e.g. `checkboxgroup`, `checkbox`, `slider`, or `dropdown`, as well as it's appearance in the UI.
 
-If the `type` of the `ColumnFilter` is not specified, a heuristic will be used to choose the most appropriate type. If the data in the column is numeric, a slider will be used. If not, a `checkboxgroup` will be used.
-
+If the `type` of the `ColumnFilter` is not specified, a heuristic will be used to choose the most appropriate type. If the data in the column is boolean-valued, a `checkbox` will be used. If it is numeric, a slider will be used. For all others, a `checkboxgroup` will be used.
 
 #### Demo 
 

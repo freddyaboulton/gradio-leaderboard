@@ -137,9 +137,12 @@ This will display a series of form elements that users can use to select/deselec
 This parameter must be a `list` but it's elements must be:
 
 * `a string`: Corresponding to the column name you'd like to add a filter for
-* `a ColumnFilter`: A special class for full control of the filter's type, e.g. `checkboxgroup`, `slider`, or `dropdown`, as well as it's appearance in the UI.
+* `a ColumnFilter`: A special class for full control of the filter's type, e.g. `checkboxgroup`, `boolean`, `slider`, or `dropdown`, as well as it's appearance in the UI.
 
-If the `type` of the `ColumnFilter` is not specified, a heuristic will be used to choose the most appropriate type. If the data in the column is numeric, a slider will be used. If not, a `checkboxgroup` will be used.
+If the `type` of the `ColumnFilter` is not specified, a heuristic will be used to choose the most appropriate type. If the data in the column is boolean-valued, a `boolean` type will be used. If it is numeric, a slider will be used. For all others, a `checkboxgroup` will be used.
+
+All `ColumnFilters` of type `boolean` will be displayed together in a checkbox group. When a `checkbox` in that group is selected, only those rows that have a true value for that column will be displayed. When it is deselected, the table will not be filtered by that column.
+You can add a label to the `boolean` `checkboxgroup` with the `bool_checkboxgroup_label` parameter. 
 
 
 #### Demo 
@@ -152,18 +155,22 @@ from gradio_leaderboard import Leaderboard, ColumnFilter
 with gr.Blocks() as demo:
     Leaderboard(
         value=pd.DataFrame({"name": ["Freddy", "Maria", "Mark"], "country": ["USA", "Mexico", "USA"],
-                            "age": [25, 30, 35], "score": [100, 200, 300]}),
+                            "age": [25, 30, 35], "score": [100, 200, 300],
+                            "registered": [True, False, True]}),
         filter_columns=[
             "name",
             ColumnFilter("country", type="dropdown", label="Select Country 🇺🇸🇲🇽"),
-            ColumnFilter("age", type="slider", min=20, max=40, greater_than=True),
-            ColumnFilter("score", type="slider", min=50, max=350, greater_than=True)],
+            ColumnFilter("age", type="slider", min=20, max=40),
+            ColumnFilter("score", type="slider", min=50, max=350),
+            "registered"],
+        bool_checkboxgroup_label="Only show registered"
     )
 
 demo.launch()
 ```
 
-![column_filter_gif](https://github.com/freddyaboulton/gradio-leaderboard/assets/41651716/24314762-6719-473e-be07-86aa50ed2bf1)
+![filter_columns_gif](https://github.com/freddyaboulton/gradio-leaderboard/assets/41651716/07dc39a5-687c-414b-b96e-777fd01ebe00)
+
 
 ## `Leaderboard`
 
@@ -242,6 +249,19 @@ list[str | ColumnFilter] | None
 </td>
 <td align="left"><code>None</code></td>
 <td align="left">See Configuration section of docs for details.</td>
+</tr>
+
+<tr>
+<td align="left"><code>bool_checkboxgroup_label</code></td>
+<td align="left" style="width: 25%;">
+
+```python
+str | None
+```
+
+</td>
+<td align="left"><code>None</code></td>
+<td align="left">Label for the checkboxgroup filter for boolean columns.</td>
 </tr>
 
 <tr>
