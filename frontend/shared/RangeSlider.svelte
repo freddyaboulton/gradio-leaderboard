@@ -73,8 +73,6 @@
     </div>
   </Block>
 
-
-  
   <style>
     .wrap {
       display: flex;
