@@ -167,8 +167,9 @@
 				}
 
 				const push_to = colon_index !== -1 ? secondary_column_matches : primary_column_matches;
+				const val = values[i][column_index] === null ? "" : values[i][column_index].toString();
 
-				if (values[i][column_index].toString().toLowerCase().includes(query_value.toLowerCase())) {
+				if (val.toLowerCase().includes(query_value.toLowerCase())) {
 					push_to.push(true);
 				} else {
 					push_to.push(false);

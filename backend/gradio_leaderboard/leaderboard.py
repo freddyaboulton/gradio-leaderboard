@@ -131,6 +131,8 @@ class Leaderboard(Component):
         self.bool_checkboxgroup_label = bool_checkboxgroup_label
         self.select_columns_config = self._get_select_columns(select_columns, value)
         self.filter_columns = self._get_column_filter_configs(filter_columns, value)
+        self.raise_error_if_incorrect_config()
+
         self.hide_columns = hide_columns or []
         self.col_count = (len(self.headers), "fixed")
         self.row_count = (value.shape[0], "fixed")
@@ -156,6 +158,17 @@ class Leaderboard(Component):
             render=render,
             value=value,
         )
+    
+    def raise_error_if_incorrect_config(self):
+        for col in [self.search_columns.primary_column, *self.search_columns.secondary_columns]:
+            if col not in self.headers:
+                raise ValueError(f"Column '{col}' not found in the DataFrame headers.")
+        for col in self.select_columns_config.default_selection + self.select_columns_config.cant_deselect:
+            if col not in self.headers:
+                raise ValueError(f"Column '{col}' not found in the DataFrame headers.")
+        for col in [col.column for col in self.filter_columns]:
+            if col not in self.headers:
+                raise ValueError(f"Column '{col}' not found in the DataFrame headers.")
 
     @staticmethod
     def _get_best_filter_type(

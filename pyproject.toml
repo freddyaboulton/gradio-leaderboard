@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gradio_leaderboard"
-version = "0.0.5"
+version = "0.0.8"
 description = "Super fast , batteries included Leaderboard component ⚡️"
 readme = "README.md"
 license = "MIT"
@@ -36,7 +36,7 @@ classifiers = [
 dev = ["build", "twine"]
 
 [tool.hatch.build]
-artifacts = ["/backend/gradio_leaderboard/templates", "*.pyi", "backend/gradio_leaderboard/templates", "backend/gradio_leaderboard/templates"]
+artifacts = ["/backend/gradio_leaderboard/templates", "*.pyi", "backend/gradio_leaderboard/templates"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["/backend/gradio_leaderboard"]

@@ -30,9 +30,9 @@ with gr.Blocks() as demo:
                 filter_columns=[
                     "T",
                     "Precision",
-                    ColumnFilter("MOE", type="checkbox", default=False, label="MoE"),
-                    ColumnFilter("Flagged", type="checkbox", default=False),
-                    ColumnFilter("#Params (B)", default=[30, 80]),
+                    ColumnFilter("MOE", type="boolean", default=False, label="MoE"),
+                    ColumnFilter("Flagged", type="boolean", default=False),
+                    ColumnFilter("#Params (B)", type="slider", default=[30, 80]),
                 ],
                 datatype=config.TYPES,
                 column_widths=["2%", "33%"],
