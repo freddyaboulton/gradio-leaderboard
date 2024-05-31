@@ -214,8 +214,10 @@
 	});
 
 	$: {
-		if (old_value && JSON.stringify(value) !== old_value) {
+		if (JSON.stringify(value) !== old_value) {
 			old_value = JSON.stringify(value);
+			original_headers = value.headers.map(s => s);
+			original_data = value.data.map(s => s);
 			handle_change();
 		}
 	}
