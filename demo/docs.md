@@ -2,7 +2,7 @@
 # gradio_leaderboard
 
 ## 🔋⚡️🥇 Super fast, batteries included Leaderboards with minimal code.
-<img alt="Static Badge" src="https://img.shields.io/badge/version%20-%200.0.3%20-%20orange">  
+<img alt="Static Badge" src="https://img.shields.io/badge/version%20-%200.0.10%20-%20orange">  
 
 
 The `gradio_leaderboard` package helps you build fully functional and performant leaderboard demos with `gradio`.
