@@ -274,58 +274,62 @@
 		{/if}
 	</Column>
 	<Column>
-		<Form>
-			{#each non_checkbox_filter_columns as col, i}
-				{#if col.type === "checkboxgroup"}
+		{#if non_checkbox_filter_columns.length || checkbox_filter_columns.length}
+			<Form>
+				{#each non_checkbox_filter_columns as col, i}
+					{#if col.type === "checkboxgroup"}
+						<Checkboxgroup
+							label={col.label || `Filter ${col.column}`}
+							{gradio}
+							{loading_status}
+							choices={col.choices}
+							value={col.default.map((s, i) => s[0])}
+							info={col.info}
+							show_label={col.show_label}
+							on:input={(e) => filter_values[i] = [col.column, e.detail]}
+						/>
+					{:else if col.type == "dropdown"}
+						<Block>
+							<BaseMultiselect 
+							label={col.label || `Filter ${col.column}`}
+							info={col.info}
+							value={col.default.map((s, i) => s[0])}
+							choices={col.choices}
+							show_label={col.show_label}
+							i18n={gradio.i18n}
+							container={true}
+							on:change={(e) => filter_values[i] = [col.column, e.detail]}
+							/>
+						</Block>
+					{:else}
+						<RangeSlider
+							label={col.label || `Filter ${col.column}`}
+							show_label={col.show_label}
+							min={col.min}
+							max={col.max}
+							selected_min={col.default[0]}
+							selected_max={col.default[1]}
+							on:change={(e) => filter_values[i] = [col.column, e.detail]}
+						/>
+					{/if}
+				{/each}
+				{#if checkbox_filter_columns.length}
 					<Checkboxgroup
-						label={col.label || `Filter ${col.column}`}
+						label={bool_checkboxgroup_label || "Show Rows with the Following Values"}
+						show_label={true}
 						{gradio}
 						{loading_status}
-						choices={col.choices}
-						value={col.default.map((s, i) => s[0])}
-						info={col.info}
-						show_label={col.show_label}
-						on:input={(e) => filter_values[i] = [col.column, e.detail]}
-					/>
-				{:else if col.type == "dropdown"}
-					<Block>
-						<BaseMultiselect 
-						label={col.label || `Filter ${col.column}`}
-						info={col.info}
-						value={col.default.map((s, i) => s[0])}
-						choices={col.choices}
-						show_label={col.show_label}
-						i18n={gradio.i18n}
-						container={true}
-						on:change={(e) => filter_values[i] = [col.column, e.detail]}
-						/>
-					</Block>
-				{:else}
-					<RangeSlider
-						label={col.label || `Filter ${col.column}`}
-						show_label={col.show_label}
-						min={col.min}
-						max={col.max}
-						selected_min={col.default[0]}
-						selected_max={col.default[1]}
-						on:change={(e) => filter_values[i] = [col.column, e.detail]}
+						choices={checkbox_filter_columns.map(col => [col.label ?? col.column, col.column])}
+						value={checkbox_filter_columns.map(col => col.default ? col.column : null).filter(s => s)}
+						on:input={(e) => {
+							checkbox_filter_columns.forEach((col, i) => {
+								filter_values[non_checkbox_filter_columns.length + i] = [col.column, e.detail.includes(col.column)]
+							});
+						}}
 					/>
 				{/if}
-			{/each}
-			<Checkboxgroup
-				label={bool_checkboxgroup_label || "Show Rows with the Following Values"}
-				show_label={true}
-				{gradio}
-				{loading_status}
-				choices={checkbox_filter_columns.map(col => [col.label ?? col.column, col.column])}
-				value={checkbox_filter_columns.map(col => col.default ? col.column : null).filter(s => s)}
-				on:input={(e) => {
-					checkbox_filter_columns.forEach((col, i) => {
-						filter_values[non_checkbox_filter_columns.length + i] = [col.column, e.detail.includes(col.column)]
-					});
-				}}
-			/>
-		</Form>
+			</Form>
+		{/if}
 	</Column>
 </Row>
 <!-- insert empty space below -->
