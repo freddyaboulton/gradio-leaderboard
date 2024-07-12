@@ -101,7 +101,7 @@ Searching follows the following rules:
 1. Multiple queries can be separated by a semicolon `;`.
 2. Any subquery is matched against the `primary search column` by default.
 3. To match against a `secondary search column`, the query must be preceded by the column name and a colon (`:`), e.g. `Name: Maria`.
-4. The returned rows are those that match against `ANY` primary search column and `ALL` secondary search columns.
+4. The returned rows are those that match against `ANY` primary search column or `ANY` secondary search columns.
 
 You can configure searching with the `search_columns` parameter. It's value can be:
 * `a list`: In which case the first element is the `primary search column` and the remaining are the `secondary search columns`.
