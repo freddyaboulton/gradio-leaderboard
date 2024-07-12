@@ -178,9 +178,9 @@
 			if (primary_column_matches.length && !secondary_column_matches.length){
 				mask[i] = primary_column_matches.some(s => s);
 			} else if (secondary_column_matches.length && !primary_column_matches.length){
-				mask[i] = secondary_column_matches.every(s => Boolean(s));
+				mask[i] = secondary_column_matches.some(s => Boolean(s));
 			} else if (primary_column_matches.length && secondary_column_matches.length){
-				mask[i] = primary_column_matches.some(s => s) && secondary_column_matches.every(s => Boolean(s));
+				mask[i] = primary_column_matches.some(s => s) || secondary_column_matches.every(s => Boolean(s));
 			}
 		}
   		return mask;

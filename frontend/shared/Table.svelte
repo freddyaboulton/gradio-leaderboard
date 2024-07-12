@@ -45,6 +45,8 @@
 	export let styling: string[][] | null = null;
 	let t_rect: DOMRectReadOnly;
 
+	$: console.log("values", values);
+
 	const dispatch = createEventDispatcher<{
 		change: {
 			data: (string | number)[][];
@@ -156,6 +158,7 @@
 	$: if (!dequal(values, old_val)) {
 		data = process_data(values as (string | number)[][]);
 		old_val = values as (string | number)[][];
+		sort_by = undefined;
 	}
 
 	let data: { id: string; value: string | number }[][] = [[]];
