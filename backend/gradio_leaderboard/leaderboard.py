@@ -230,8 +230,9 @@ class Leaderboard(Component):
                 column.default = default
             if not column.choices:
                 column.choices = choices
-            if min_val is not None and max_val is not None:
+            if column.min == None:
                 column.min = min_val
+            if column.max == None:
                 column.max = max_val
             return column
         if isinstance(column, str):
