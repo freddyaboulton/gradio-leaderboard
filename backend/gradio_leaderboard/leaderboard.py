@@ -211,7 +211,7 @@ class Leaderboard(Component):
                 value[column_name].quantile(0.25),
                 value[column_name].quantile(0.70),
             ]
-            min_val = value[column_name].min() - 1
+            min_val = value[column_name].min()
             max_val = value[column_name].max() + 1
             choices = None
         elif best_filter_type == "checkbox":
