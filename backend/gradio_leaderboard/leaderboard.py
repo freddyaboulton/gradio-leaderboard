@@ -5,6 +5,7 @@ from __future__ import annotations
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, Literal
 
+import numpy as np
 from pandas.api.types import (
     is_numeric_dtype,
     is_object_dtype,
@@ -212,7 +213,7 @@ class Leaderboard(Component):
                 value[column_name].quantile(0.70),
             ]
             min_val = value[column_name].min()
-            max_val = value[column_name].max() + 1
+            max_val = value[column_name].max()
             choices = None
         elif best_filter_type == "checkbox":
             default = False
@@ -234,6 +235,9 @@ class Leaderboard(Component):
                 column.min = min_val
             if column.max == None:
                 column.max = max_val
+            if best_filter_type == "slider":
+                column.min = np.floor(column.min)
+                column.max = np.ceil(column.max)
             return column
         if isinstance(column, str):
             return ColumnFilter(
