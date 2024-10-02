@@ -5,6 +5,7 @@ from __future__ import annotations
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, Literal
 
+import numpy as np
 from pandas.api.types import (
     is_numeric_dtype,
     is_object_dtype,
@@ -230,9 +231,21 @@ class Leaderboard(Component):
                 column.default = default
             if not column.choices:
                 column.choices = choices
-            if min_val is not None and max_val is not None:
+            if column.min == None:
                 column.min = min_val
+            if column.max == None:
                 column.max = max_val
+            if best_filter_type == "slider":
+                column.min = np.floor(column.min)
+                if not (column.min < column.default[0]).all():
+                    column.default = [column.min, column.default[1]]
+
+                column.max = np.ceil(column.max)
+                if not (column.max > column.default[1]).all():
+                    column.default = [column.default[0], column.max]
+
+                if not (column.default[0] < column.default[1]):
+                    column.default = [column.min, column.max]
             return column
         if isinstance(column, str):
             return ColumnFilter(
