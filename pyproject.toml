@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gradio_leaderboard"
-version = "0.0.11"
+version = "0.0.13"
 description = "Super fast , batteries included Leaderboard component ⚡️"
 readme = "README.md"
 license = "MIT"
@@ -16,7 +16,7 @@ requires-python = ">=3.8"
 authors = [{ name = "YOUR NAME", email = "YOUREMAIL@domain.com" }]
 keywords = ["gradio-custom-component", "gradio-template-Dataframe", "leaderboard", "dataframe", "data", "table"]
 # Add dependencies here
-dependencies = ["gradio>=4.0,<5.0"]
+dependencies = ["gradio>=4.0,<6.0"]
 classifiers = [
   'Development Status :: 3 - Alpha',
   'License :: OSI Approved :: Apache Software License',
@@ -36,7 +36,7 @@ classifiers = [
 dev = ["build", "twine"]
 
 [tool.hatch.build]
-artifacts = ["/backend/gradio_leaderboard/templates", "*.pyi", "backend/gradio_leaderboard/templates", "backend/gradio_leaderboard/templates", "backend/gradio_leaderboard/templates"]
+artifacts = ["/backend/gradio_leaderboard/templates", "*.pyi", "backend/gradio_leaderboard/templates", "backend/gradio_leaderboard/templates", "backend/gradio_leaderboard/templates", "backend/gradio_leaderboard/templates", "backend/gradio_leaderboard/templates"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["/backend/gradio_leaderboard"]

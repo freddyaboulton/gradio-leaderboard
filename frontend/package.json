@@ -9,30 +9,37 @@
   "main_changeset": true,
   "main": "./Index.svelte",
   "dependencies": {
-    "@gradio/atoms": "0.6.2",
-    "@gradio/button": "0.2.30",
-    "@gradio/checkboxgroup": "^0.4.8",
-    "@gradio/column": "^0.1.0",
-    "@gradio/dropdown": "^0.6.7",
-    "@gradio/form": "^0.1.15",
-    "@gradio/markdown": "0.6.9",
-    "@gradio/row": "^0.1.1",
-    "@gradio/simpletextbox": "^0.1.14",
-    "@gradio/statustracker": "0.4.11",
-    "@gradio/upload": "0.8.4",
-    "@gradio/utils": "0.3.1",
-    "@types/d3-dsv": "^3.0.0",
-    "@types/dompurify": "^3.0.2",
-    "@types/katex": "^0.16.0",
+    "@gradio/atoms": "0.9.0",
+    "@gradio/button": "0.3.0",
+    "@gradio/checkboxgroup": "^0.6.1",
+    "@gradio/column": "^0.2.0",
+    "@gradio/dropdown": "^0.8.1",
+    "@gradio/form": "^0.2.0",
+    "@gradio/markdown": "0.10.1",
+    "@gradio/row": "^0.2.0",
+    "@gradio/simpletextbox": "^0.3.1",
+    "@gradio/statustracker": "0.8.1",
+    "@gradio/upload": "0.13.0",
+    "@gradio/utils": "0.7.0",
+    "@types/d3-dsv": "^3.0.7",
+    "@types/dompurify": "^3.0.5",
+    "@types/katex": "^0.16.7",
     "d3-dsv": "^3.0.1",
-    "dequal": "^2.0.2",
-    "dompurify": "^3.1.6",
-    "katex": "^0.16.7",
-    "marked": "^12.0.0"
+    "dequal": "^2.0.3",
+    "dompurify": "^3.1.7",
+    "katex": "^0.16.11",
+    "marked": "^14.1.2"
   },
   "exports": {
-    ".": "./Index.svelte",
-    "./example": "./Example.svelte",
+    ".": {
+      "gradio": "./Index.svelte"
+    },
+    "./example": {
+      "gradio": "./Example.svelte"
+    },
     "./package.json": "./package.json"
+  },
+  "devDependencies": {
+    "@gradio/preview": "^0.12.0"
   }
 }
