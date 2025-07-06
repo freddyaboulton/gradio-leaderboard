@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gradio_leaderboard"
-version = "0.0.13"
+version = "0.0.14"
 description = "Super fast , batteries included Leaderboard component ⚡️"
 readme = "README.md"
 license = "MIT"

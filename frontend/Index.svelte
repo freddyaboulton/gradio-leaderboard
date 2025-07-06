@@ -243,6 +243,14 @@
 		}
 	});
 
+	// Compute filtered_datatype to match _headers
+	$: filtered_datatype = Array.isArray(datatype)
+		? _headers.map(h => {
+			const idx = original_headers.indexOf(h);
+			return datatype[idx];
+		})
+		: datatype;
+
 </script>
 
 <Row>
@@ -352,7 +360,7 @@
 		headers={_headers}
 		on:select={(e) => gradio.dispatch("select", e.detail)}
 		{wrap}
-		{datatype}
+		datatype={filtered_datatype}
 		{latex_delimiters}
 		editable={interactive}
 		{height}
